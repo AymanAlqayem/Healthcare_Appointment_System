@@ -7,10 +7,10 @@ import lombok.Setter;
 import java.util.List;
 
 @Entity
-@Table(name = "patients")
+@Table(name = "doctors")
 @Getter
 @Setter
-public class Patient {
+public class Doctor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,10 +20,10 @@ public class Patient {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    private String gender;
-    private String dateOfBirth;
+    private String specialty;
 
     // Relations
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
     private List<Appointment> appointments;
 }
+

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record PatientDto(
+public record AdminDto(
         @NotBlank(message = "Username is required")
         @Size(min = 3, max = 50)
         String username,
@@ -15,14 +15,7 @@ public record PatientDto(
 
         @NotBlank(message = "Email is required")
         @Email(message = "Email must be valid")
-        String email,
-
-        @NotBlank(message = "Gender is required")
-        String gender,
-
-        @NotBlank(message = "Date of Birth is required")
-        String dateOfBirth // Could later convert to LocalDate
+        String email
 ) {
 }
-
 

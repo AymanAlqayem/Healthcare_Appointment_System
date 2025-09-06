@@ -10,6 +10,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/clinicdb
+      database: clinicdb
 
 # Optional: keep H2 console for quick dev testing
 # spring:

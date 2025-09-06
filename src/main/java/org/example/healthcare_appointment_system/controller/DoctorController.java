@@ -5,13 +5,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-@RequestMapping("/api/doctor")
-public class DoctorController {
-
-    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
-    @GetMapping("/me")
-    public String me() {
-        return "Doctor portal";
-    }
-}
+//@RestController
+//@RequestMapping("/api/doctor")
+//public class DoctorController {
+//
+//    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
+//    @GetMapping("/me")
+//    public String me() {
+//        return "Doctor portal";
+//    }
+//}
