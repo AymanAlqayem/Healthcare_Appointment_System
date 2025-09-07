@@ -1,10 +1,9 @@
 package org.example.healthcare_appointment_system.dto;
 
-public record PatientResponseDto(
+public record AdminResponseDto(
         Long id,
         String username,
         String email,
-        String gender,
-        String dateOfBirth
+        String phone
 ) {
 }

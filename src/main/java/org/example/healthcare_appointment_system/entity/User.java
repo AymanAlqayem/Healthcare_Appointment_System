@@ -15,7 +15,6 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,11 +28,11 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false, unique = true)
     private String phone;
 
     @Column(nullable = false)
     private boolean enabled = true;  // default active
-
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

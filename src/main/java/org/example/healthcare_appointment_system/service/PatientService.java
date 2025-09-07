@@ -52,17 +52,21 @@ package org.example.healthcare_appointment_system.service;
 //    }
 //}
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.PatientDto;
 import org.example.healthcare_appointment_system.dto.PatientResponseDto;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.entity.User;
+import org.example.healthcare_appointment_system.enums.Gender;
 import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.repo.PatientRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 
@@ -74,7 +78,8 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public Patient createPatient(PatientDto dto) {
+    @Transactional
+    public PatientResponseDto createPatient(PatientDto dto) {
         if (userRepository.existsByUsername(dto.username())) {
             throw new RuntimeException("Username already exists");
         }
@@ -82,27 +87,53 @@ public class PatientService {
             throw new RuntimeException("Email already exists");
         }
 
+        if (userRepository.existsByPhone(dto.phone())) {
+            throw new RuntimeException("Phone already exists");
+        }
+
         // Create User account
         User user = User.builder()
                 .username(dto.username())
                 .email(dto.email())
+                .phone(dto.phone())
                 .password(passwordEncoder.encode(dto.password()))
                 .role(Role.PATIENT)
                 .enabled(true)
                 .build();
+
         userRepository.save(user);
 
         // Create Patient profile linked to user
         Patient patient = new Patient();
         patient.setUser(user);
-        patient.setGender(dto.gender());
+        patient.setGender(dto.gender());  // directly assign
         patient.setDateOfBirth(dto.dateOfBirth());
 
-        return patientRepository.save(patient);
+        Patient savedPatient = patientRepository.save(patient);
+
+        // Convert to response DTO
+        return new PatientResponseDto(
+                savedPatient.getId(),
+                savedPatient.getUser().getUsername(),
+                savedPatient.getUser().getEmail(),
+                savedPatient.getGender().name(),  // convert enum to String
+                savedPatient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        );
     }
 
-    public List<Patient> getAllPatients() {
-        return patientRepository.findAll();
+
+    public List<PatientResponseDto> getAllPatients() {
+        return patientRepository.findAll()
+                .stream()
+                .map(patient -> new PatientResponseDto(
+                        patient.getId(),
+                        patient.getUser().getUsername(),
+                        patient.getUser().getEmail(),
+                        patient.getGender().name(), // convert enum to string
+                        patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                ))
+                .toList();
     }
+
 }
 

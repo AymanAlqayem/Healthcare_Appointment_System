@@ -2,20 +2,25 @@ package org.example.healthcare_appointment_system.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.example.healthcare_appointment_system.enums.Role;
 
 public record AdminDto(
-        @NotBlank(message = "Username is required")
+        @NotBlank
         @Size(min = 3, max = 50)
         String username,
 
-        @NotBlank(message = "Password is required")
+        @NotBlank
         @Size(min = 6, max = 100)
         String password,
 
-        @NotBlank(message = "Email is required")
-        @Email(message = "Email must be valid")
+        @NotBlank
+        @Pattern(regexp = "\\d{10}", message = "Phone must be exactly 10 digits")
+        String phone,
+
+        @NotBlank
+        @Email
         String email
-) {
-}
+) {}
 
