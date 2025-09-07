@@ -53,9 +53,12 @@ package org.example.healthcare_appointment_system.service;
 //}
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.PatientDto;
 import org.example.healthcare_appointment_system.dto.PatientResponseDto;
+import org.example.healthcare_appointment_system.dto.PatientUpdateDto;
+import org.example.healthcare_appointment_system.entity.Doctor;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.Gender;
@@ -65,6 +68,7 @@ import org.example.healthcare_appointment_system.repo.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -121,6 +125,23 @@ public class PatientService {
         );
     }
 
+    public ResponseEntity<String> deletePatient(Long id) {
+        Patient patient = patientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
+
+        //Also delete the associated User if desired
+        User user = patient.getUser();
+
+        // Delete doctor entity
+        patientRepository.delete(patient);
+
+        // Delete the associated user
+        if (user != null) {
+            userRepository.delete(user);
+        }
+        return ResponseEntity.ok("Patient deleted successfully");
+
+    }
 
     public List<PatientResponseDto> getAllPatients() {
         return patientRepository.findAll()
@@ -133,6 +154,38 @@ public class PatientService {
                         patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
                 ))
                 .toList();
+    }
+
+    @Transactional
+    public PatientResponseDto updatePatient(PatientUpdateDto dto) {
+        Patient patient = patientRepository.findById(dto.id())
+                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + dto.id()));
+
+        User user = patient.getUser();
+
+        // Check for email uniqueness if changed
+        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        // Update user fields
+        user.setEmail(dto.email());
+        user.setPhone(dto.phone());
+        userRepository.save(user);
+
+        // Update patient-specific fields
+        patient.setGender(dto.gender());
+        patient.setDateOfBirth(dto.dateOfBirth());
+        patientRepository.save(patient);
+
+        // Map to response DTO
+        return new PatientResponseDto(
+                patient.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                patient.getGender().name(),
+                patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        );
     }
 
 }

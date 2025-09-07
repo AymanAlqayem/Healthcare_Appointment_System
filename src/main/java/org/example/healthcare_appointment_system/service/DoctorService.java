@@ -1,14 +1,17 @@
 package org.example.healthcare_appointment_system.service;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.DoctorDto;
 import org.example.healthcare_appointment_system.dto.DoctorResponseDto;
+import org.example.healthcare_appointment_system.dto.DoctorUpdateDto;
 import org.example.healthcare_appointment_system.entity.Doctor;
 import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.repo.DoctorRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -80,6 +83,52 @@ public class DoctorService {
                 ))
                 .toList();
     }
+
+    public ResponseEntity<String> deleteDoctor(Long id) {
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+
+        //Also delete the associated User if desired
+        User user = doctor.getUser();
+
+        // Delete doctor entity
+        doctorRepository.delete(doctor);
+
+        // Delete the associated user
+        if (user != null) {
+            userRepository.delete(user);
+        }
+        return ResponseEntity.ok("Doctor deleted successfully");
+    }
+
+    @Transactional
+    public DoctorResponseDto updateDoctor(DoctorUpdateDto dto) {
+        Doctor doctor = doctorRepository.findById(dto.id())
+                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + dto.id()));
+
+        // Update User info
+        User user = doctor.getUser();
+        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
+            throw new RuntimeException("Email already exists");
+        }
+        user.setEmail(dto.email());
+        user.setPhone(dto.phone());
+        userRepository.save(user);
+
+        // Update Doctor-specific info
+        doctor.setSpecialty(dto.specialty());
+        doctorRepository.save(doctor);
+
+        // Map to response DTO
+        return new DoctorResponseDto(
+                doctor.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhone(),
+                doctor.getSpecialty()
+        );
+    }
+
 }
 
 
