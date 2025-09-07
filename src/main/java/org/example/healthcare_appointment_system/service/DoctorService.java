@@ -35,7 +35,7 @@ public class DoctorService {
                 .username(dto.username())
                 .email(dto.email())
                 .password(passwordEncoder.encode(dto.password()))
-                .roles(Set.of(Role.DOCTOR))
+                .role(Role.DOCTOR)
                 .enabled(true)
                 .build();
         userRepository.save(user);

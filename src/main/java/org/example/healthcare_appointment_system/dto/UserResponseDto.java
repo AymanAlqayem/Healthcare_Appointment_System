@@ -9,5 +9,5 @@ public record UserResponseDto(
         Long id,
         String username,
         String email,
-        Set<Role> roles
+        Role role
 ) {}

@@ -29,7 +29,7 @@ public class AdminService {
                 .username(dto.username())
                 .email(dto.email())
                 .password(passwordEncoder.encode(dto.password()))
-                .roles(Set.of(Role.ADMIN))
+                .role(Role.ADMIN)
                 .enabled(true)
                 .build();
 

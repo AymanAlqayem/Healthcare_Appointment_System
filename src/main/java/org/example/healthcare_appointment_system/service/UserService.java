@@ -13,51 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
-//@Service
-//public class UserService {
-//    private final UserRepository userRepository;
-//    private final PasswordEncoder passwordEncoder;
-//
-//    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-//        this.userRepository = userRepository;
-//        this.passwordEncoder = passwordEncoder;
-//    }
-//
-//    @Transactional
-//    public UserDto register(RegisterRequest req) {
-//        // Check if username already exists
-//        if (userRepository.existsByUsername(req.username())) {
-//            throw new IllegalArgumentException("Username already taken");
-//        }
-//
-//        // Roles are already Set<Role> in DTO, no need to convert
-//        Set<Role> roles = req.roles() != null && !req.roles().isEmpty()
-//                ? req.roles()
-//                : Set.of(Role.PATIENT); // default role if none provided
-//
-//        // Build User entity
-//        User user = User.builder()
-//                .username(req.username())
-//                .password(passwordEncoder.encode(req.password()))
-//                .email(req.email())
-//                .phone(req.phone())
-//                .roles(roles)
-//                .enabled(true) // important for Spring Security
-//                .build();
-//
-//        User saved = userRepository.save(user);
-//
-//        return new UserDto(
-//                saved.getId(),
-//                saved.getUsername(),
-//                saved.getEmail(),
-//                saved.getPhone(),
-//                saved.getRoles()
-//        );
-//
-//    }
-//}
-
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -77,13 +32,13 @@ public class UserService {
                 .username(dto.username())
                 .email(dto.email())
                 .password(passwordEncoder.encode(dto.password()))
-                .roles(dto.roles())
+                .role(dto.role())
                 .enabled(true)
                 .build();
 
         userRepository.save(user);
 
-        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRoles());
+        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
     }
 
     public User getUserById(Long id) {

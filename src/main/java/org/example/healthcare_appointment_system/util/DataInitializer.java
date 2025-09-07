@@ -1,44 +1,14 @@
 package org.example.healthcare_appointment_system.util;
 
-//import org.example.healthcare_appointment_system.enums.Role;
-//import org.example.healthcare_appointment_system.repo.UserRepository;
-//import org.springframework.boot.CommandLineRunner;
-//import org.springframework.security.core.userdetails.User;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.stereotype.Component;
-//
-//import java.util.Set;
-//
-//@Component
-//public class DataInitializer implements CommandLineRunner {
-//    private final UserRepository userRepository;
-//    private final PasswordEncoder passwordEncoder;
-//
-//    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-//        this.userRepository = userRepository;
-//        this.passwordEncoder = passwordEncoder;
-//    }
-//
-//    @Override
-//    public void run(String... args) {
-//        if (userRepository.count() == 0) {
-//            var admin = User.builder()
-//                    .username("admin")
-//                    .password(passwordEncoder.encode("admin123"))
-//                    .roles(Set.of(Role.ADMIN))
-//                    .enabled(true)
-//                    .build();
-//            userRepository.save(admin);
-//        }
-//    }
-//}
-
-
 import org.example.healthcare_appointment_system.document.MedicalRecord;
 import org.example.healthcare_appointment_system.document.Prescription;
+import org.example.healthcare_appointment_system.entity.User;
+import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.repo.MedicalRecordRepository;
 import org.example.healthcare_appointment_system.repo.PrescriptionRepository;
+import org.example.healthcare_appointment_system.repo.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -50,16 +20,39 @@ public class DataInitializer implements CommandLineRunner {
 
     private final PrescriptionRepository prescriptionRepository;
     private final MedicalRecordRepository medicalRecordRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(PrescriptionRepository prescriptionRepository,
-                           MedicalRecordRepository medicalRecordRepository) {
+                           MedicalRecordRepository medicalRecordRepository,
+                           UserRepository userRepository,
+                           PasswordEncoder passwordEncoder) {
         this.prescriptionRepository = prescriptionRepository;
         this.medicalRecordRepository = medicalRecordRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        // Clear existing data
+    public void run(String... args) {
+        // ✅ Ensure admin user exists
+        if (userRepository.findByUsername("ayman").isEmpty()) {
+            User admin = User.builder()
+                    .username("ayman")
+                    .password(passwordEncoder.encode("123456"))
+                    .email("ayman@example.com")
+                    .phone("1234567890")
+                    .enabled(true)
+                    .role(Role.ADMIN)
+                    .build();
+
+            userRepository.save(admin);
+            System.out.println("✅ Admin user created: ayman / 123456");
+        } else {
+            System.out.println("ℹ️ Admin user already exists, skipping creation.");
+        }
+
+        // ✅ Clear existing MongoDB data
         prescriptionRepository.deleteAll();
         medicalRecordRepository.deleteAll();
 

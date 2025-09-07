@@ -22,7 +22,7 @@ public class SecurityConfig {
 
     /**
      * filterChain method that will define the security rules for application
-     * */
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -45,7 +45,7 @@ public class SecurityConfig {
 
     /**
      * authenticationManager is used by Spring Security to authenticate credentials (like when a user logs in).
-     * */
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -53,7 +53,7 @@ public class SecurityConfig {
 
     /**
      * passwordEncoder method that will hash the password.
-     * */
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

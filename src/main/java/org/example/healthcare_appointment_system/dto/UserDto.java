@@ -10,6 +10,6 @@ public record UserDto(
         String username,
         String email,
         String password,
-        Set<Role> roles
+        Role role
 ) {
 }

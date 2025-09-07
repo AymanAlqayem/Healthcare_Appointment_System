@@ -87,7 +87,7 @@ public class PatientService {
                 .username(dto.username())
                 .email(dto.email())
                 .password(passwordEncoder.encode(dto.password()))
-                .roles(Set.of(Role.PATIENT))
+                .role(Role.PATIENT)
                 .enabled(true)
                 .build();
         userRepository.save(user);
