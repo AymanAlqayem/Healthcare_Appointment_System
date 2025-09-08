@@ -3,6 +3,7 @@ package org.example.healthcare_appointment_system.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.*;
+import org.example.healthcare_appointment_system.entity.Appointment;
 import org.example.healthcare_appointment_system.service.AppointmentService;
 import org.example.healthcare_appointment_system.service.DoctorService;
 import org.example.healthcare_appointment_system.service.PatientService;
@@ -34,14 +35,6 @@ public class PatientController {
         return ResponseEntity.ok(updatedPatient);
     }
 
-    //    @PostMapping("/book-appointment")
-//    public ResponseEntity<AppointmentResponseDto> bookAppointment(
-//            @RequestBody @Valid AppointmentDto dto
-//    ) {
-//        AppointmentResponseDto response = appointmentService.bookAppointment(dto);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//    }
-
     @PostMapping("/book-appointment")
     public ResponseEntity<AppointmentResponseDto> bookAppointment(
             @RequestBody @Valid BookAppointmentDto dto
@@ -49,5 +42,17 @@ public class PatientController {
         AppointmentResponseDto response = appointmentService.bookAppointment(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @GetMapping("/appointments")
+    public List<AppointmentResponseDto> getMyAppointments(@RequestParam Long patientId) {
+        return patientService.getAppointments(patientId);
+    }
+
+    @PutMapping("/cancel-appointment/{id}")
+    public ResponseEntity<AppointmentResponseDto> cancelAppointment(@PathVariable Long id) {
+        AppointmentResponseDto response = patientService.cancelAppointment(id);
+        return ResponseEntity.ok(response);
+    }
+
 
 }

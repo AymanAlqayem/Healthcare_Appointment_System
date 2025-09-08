@@ -11,11 +11,18 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "availability_slots")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+        name = "availability_slots",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"doctor_id", "date", "startTime", "endTime"}
+                )
+        }
+)
 public class AvailabilitySlot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

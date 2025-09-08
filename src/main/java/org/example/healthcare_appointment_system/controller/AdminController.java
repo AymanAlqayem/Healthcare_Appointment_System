@@ -53,11 +53,21 @@ public class AdminController {
         return ResponseEntity.ok(updatedDoctor);
     }
 
+    @PostMapping("/doctor/{doctorId}/add-slot")
+    public ResponseEntity<SlotResponseDto> addSlot(
+            @PathVariable Long doctorId,
+            @Valid @RequestBody SlotCreateDto dto
+    ) {
+        SlotResponseDto response = adminService.addSlot(doctorId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
 
     @GetMapping("/doctors")
     public List<DoctorResponseDto> getDoctors() {
         return doctorService.getAllDoctors();
     }
+
 
     /**
      * Patient APIs

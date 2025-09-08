@@ -2,13 +2,14 @@ package org.example.healthcare_appointment_system.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.healthcare_appointment_system.dto.AvailabilitySlotResponseDto;
-import org.example.healthcare_appointment_system.dto.PatientDto;
-import org.example.healthcare_appointment_system.dto.PatientResponseDto;
-import org.example.healthcare_appointment_system.dto.PatientUpdateDto;
+import org.example.healthcare_appointment_system.AOP.CancelAppointmentCheck;
+import org.example.healthcare_appointment_system.dto.*;
+import org.example.healthcare_appointment_system.entity.Appointment;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.entity.User;
+import org.example.healthcare_appointment_system.enums.AppointmentStatus;
 import org.example.healthcare_appointment_system.enums.Role;
+import org.example.healthcare_appointment_system.repo.AppointmentRepository;
 import org.example.healthcare_appointment_system.repo.PatientRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ public class PatientService {
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AppointmentRepository appointmentRepository;
 
     @Transactional
     public PatientResponseDto createPatient(PatientDto dto) {
@@ -154,6 +156,43 @@ public class PatientService {
     }
 
 
+    public List<AppointmentResponseDto> getAppointments(Long patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
 
+        return appointmentRepository.findByPatientId(patientId)
+                .stream()
+                .map(app -> new AppointmentResponseDto(
+                        app.getId(),
+                        app.getDoctor().getUser().getUsername(),
+                        app.getPatient().getUser().getUsername(),
+                        app.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                        app.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        app.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        app.getStatus().name()
+                ))
+                .toList();
+    }
+
+    @CancelAppointmentCheck
+    @Transactional
+    public AppointmentResponseDto cancelAppointment(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        // Update status
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.save(appointment);
+
+        return new AppointmentResponseDto(
+                appointment.getId(),
+                appointment.getDoctor().getUser().getUsername(),
+                appointment.getPatient().getUser().getUsername(),
+                appointment.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                appointment.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                appointment.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                appointment.getStatus().name()
+        );
+    }
 }
 
