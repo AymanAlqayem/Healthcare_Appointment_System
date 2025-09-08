@@ -1,12 +1,8 @@
 package org.example.healthcare_appointment_system.controller;
 
-import jakarta.validation.Path;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.*;
-import org.example.healthcare_appointment_system.entity.Doctor;
-import org.example.healthcare_appointment_system.entity.Patient;
-import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.repo.DoctorRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
 import org.example.healthcare_appointment_system.service.AdminService;

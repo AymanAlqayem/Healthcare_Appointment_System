@@ -5,9 +5,10 @@ import java.time.LocalTime;
 
 public record AvailabilitySlotResponseDto(
         Long id,
-        LocalDate date,
-        LocalTime startTime,
-        LocalTime endTime,
+        String date,       // formatted from LocalDate
+        String startTime,  // formatted from LocalTime
+        String endTime,    // formatted from LocalTime
         boolean reserved
-) { }
+) {}
+
 

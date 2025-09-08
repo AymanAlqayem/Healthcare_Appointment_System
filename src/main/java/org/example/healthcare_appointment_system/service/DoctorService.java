@@ -3,6 +3,7 @@ package org.example.healthcare_appointment_system.service;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.healthcare_appointment_system.dto.AvailabilitySlotResponseDto;
 import org.example.healthcare_appointment_system.dto.DoctorDto;
 import org.example.healthcare_appointment_system.dto.DoctorResponseDto;
 import org.example.healthcare_appointment_system.dto.DoctorUpdateDto;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +27,6 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class DoctorService {
-
     private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
     private final PasswordEncoder passwordEncoder;
@@ -43,14 +44,7 @@ public class DoctorService {
         }
 
         // Create User account
-        User user = User.builder()
-                .username(dto.username())
-                .email(dto.email())
-                .phone(dto.phone())
-                .password(passwordEncoder.encode(dto.password()))
-                .role(Role.DOCTOR)
-                .enabled(true)
-                .build();
+        User user = User.builder().username(dto.username()).email(dto.email()).phone(dto.phone()).password(passwordEncoder.encode(dto.password())).role(Role.DOCTOR).enabled(true).build();
 
         userRepository.save(user);
 
@@ -61,49 +55,71 @@ public class DoctorService {
 
         // Handle slots if provided
         if (dto.slots() != null && !dto.slots().isEmpty()) {
-            List<AvailabilitySlot> slots = dto.slots().stream()
-                    .map(slotDto -> {
-                        AvailabilitySlot slot = new AvailabilitySlot();
-                        slot.setDate(slotDto.date());
-                        slot.setStartTime(slotDto.startTime());
-                        slot.setEndTime(slotDto.endTime());
-                        slot.setReserved(false);
-                        slot.setDoctor(doctor);
-                        return slot;
-                    })
-                    .toList();
+            List<AvailabilitySlot> slots = dto.slots().stream().map(slotDto -> {
+                AvailabilitySlot slot = new AvailabilitySlot();
+                slot.setDate(slotDto.date());
+                slot.setStartTime(slotDto.startTime());
+                slot.setEndTime(slotDto.endTime());
+                slot.setReserved(false);
+                slot.setDoctor(doctor);
+                return slot;
+            }).toList();
             doctor.setAvailabilitySlots(slots);
         }
 
         Doctor savedDoctor = doctorRepository.save(doctor);
 
         // Return response
+        List<AvailabilitySlotResponseDto> slots = savedDoctor.getAvailabilitySlots()
+                .stream()
+                .map(slot -> new AvailabilitySlotResponseDto(
+                        slot.getId(),
+                        slot.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                        slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        slot.isReserved()
+                ))
+                .toList();
+
         return new DoctorResponseDto(
                 savedDoctor.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getPhone(),
-                savedDoctor.getSpecialty()
+                savedDoctor.getSpecialty(),
+                slots
         );
     }
-
 
     public List<DoctorResponseDto> getAllDoctors() {
         return doctorRepository.findAll()
                 .stream()
-                .map(doctor -> new DoctorResponseDto(
-                        doctor.getId(),
-                        doctor.getUser().getUsername(),
-                        doctor.getUser().getEmail(),
-                        doctor.getUser().getPhone(),
-                        doctor.getSpecialty()
-                ))
+                .map(doctor -> {
+                    List<AvailabilitySlotResponseDto> slots = doctor.getAvailabilitySlots()
+                            .stream()
+                            .map(slot -> new AvailabilitySlotResponseDto(
+                                    slot.getId(),
+                                    slot.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                                    slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    slot.isReserved()
+                            ))
+                            .toList();
+
+                    return new DoctorResponseDto(
+                            doctor.getId(),
+                            doctor.getUser().getUsername(),
+                            doctor.getUser().getEmail(),
+                            doctor.getUser().getPhone(),
+                            doctor.getSpecialty(),
+                            slots
+                    );
+                })
                 .toList();
     }
 
     public ResponseEntity<String> deleteDoctor(Long id) {
-        Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+        Doctor doctor = doctorRepository.findById(id).orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
 
         //Also delete the associated User if desired
         User user = doctor.getUser();
@@ -120,8 +136,7 @@ public class DoctorService {
 
     @Transactional
     public DoctorResponseDto updateDoctor(DoctorUpdateDto dto) {
-        Doctor doctor = doctorRepository.findById(dto.id())
-                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + dto.id()));
+        Doctor doctor = doctorRepository.findById(dto.id()).orElseThrow(() -> new RuntimeException("Doctor not found with id: " + dto.id()));
 
         // Update User info
         User user = doctor.getUser();
@@ -136,14 +151,59 @@ public class DoctorService {
         doctor.setSpecialty(dto.specialty());
         doctorRepository.save(doctor);
 
-        // Map to response DTO
+        List<AvailabilitySlotResponseDto> slots = doctor.getAvailabilitySlots()
+                .stream()
+                .map(slot -> new AvailabilitySlotResponseDto(
+                        slot.getId(),
+                        slot.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                        slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        slot.isReserved()
+                ))
+                .toList();
+
         return new DoctorResponseDto(
                 doctor.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getPhone(),
-                doctor.getSpecialty()
+                doctor.getSpecialty(),
+                slots
         );
+
+
+    }
+
+    public List<DoctorResponseDto> searchBySpecialty(String specialty) {
+        List<Doctor> doctors = doctorRepository.findBySpecialtyIgnoreCase(specialty);
+
+        if (doctors.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No doctors found with specialty: " + specialty);
+        }
+
+        return doctors.stream()
+                .map(doctor -> {
+                    List<AvailabilitySlotResponseDto> slots = doctor.getAvailabilitySlots()
+                            .stream()
+                            .map(slot -> new AvailabilitySlotResponseDto(
+                                    slot.getId(),
+                                    slot.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                                    slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    slot.isReserved()
+                            ))
+                            .toList();
+
+                    return new DoctorResponseDto(
+                            doctor.getId(),
+                            doctor.getUser().getUsername(),
+                            doctor.getUser().getEmail(),
+                            doctor.getUser().getPhone(),
+                            doctor.getSpecialty(),
+                            slots
+                    );
+                })
+                .toList();
     }
 
 }
