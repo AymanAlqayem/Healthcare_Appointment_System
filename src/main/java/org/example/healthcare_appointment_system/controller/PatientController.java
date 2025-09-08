@@ -34,14 +34,20 @@ public class PatientController {
         return ResponseEntity.ok(updatedPatient);
     }
 
+    //    @PostMapping("/book-appointment")
+//    public ResponseEntity<AppointmentResponseDto> bookAppointment(
+//            @RequestBody @Valid AppointmentDto dto
+//    ) {
+//        AppointmentResponseDto response = appointmentService.bookAppointment(dto);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//    }
+
     @PostMapping("/book-appointment")
     public ResponseEntity<AppointmentResponseDto> bookAppointment(
-            @RequestBody @Valid AppointmentDto dto
+            @RequestBody @Valid BookAppointmentDto dto
     ) {
         AppointmentResponseDto response = appointmentService.bookAppointment(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-
 
 }
