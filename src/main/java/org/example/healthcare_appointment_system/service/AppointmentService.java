@@ -35,6 +35,7 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AvailabilitySlotRepository availabilitySlotRepository;
 
     public List<AppointmentResponseDto> getMyAppointments() {
         // Get the currently logged-in user's ID
@@ -143,32 +144,63 @@ public class AppointmentService {
     }
 
     public List<AvailabilitySlotResponseDto> getMyAvailableSlots() {
-        // Get the currently logged-in user's ID
+        // 1. Get logged-in user ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Find the doctor associated with this user ID
-        Doctor doctor = doctorRepository.findByUserId(currentUserId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found for current user"));
+        // 2. Find the doctor linked to this user
+        Doctor doctor = doctorRepository.findAll().stream()
+                .filter(d -> d.getUser().getId().equals(currentUserId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Doctor profile not found for user ID: " + currentUserId));
 
-        // Get available (not reserved) slots for this doctor
-        List<AvailabilitySlot> availableSlots = slotRepository.findByDoctorIdAndReservedFalse(doctor.getId());
+        // 3. Get slots for this doctor and filter only available (reserved = false)
+        List<AvailabilitySlot> slots = availabilitySlotRepository.findAll().stream()
+                .filter(s -> s.getDoctor().getId().equals(doctor.getId()) && !s.isReserved())
+                .toList();
 
-        // Filter to show only future slots (today and beyond)
-        List<AvailabilitySlot> futureSlots = availableSlots.stream()
-                .filter(slot -> isSlotInFuture(slot))
-                .collect(Collectors.toList());
+        // 4. Map to DTO with formatting
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-        // Convert to DTO
-        return futureSlots.stream()
+        return slots.stream()
                 .map(slot -> new AvailabilitySlotResponseDto(
                         slot.getId(),
-                        slot.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-                        slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                        slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                        slot.isReserved()  // This will always be 'false' due to repository filter
+                        slot.getDate().format(dateFormatter),
+                        slot.getStartTime().format(timeFormatter),
+                        slot.getEndTime().format(timeFormatter),
+                        slot.isReserved()
                 ))
                 .toList();
     }
+
+
+//    public List<AvailabilitySlotResponseDto> getMyAvailableSlots() {
+//        // 1. Get logged-in user ID
+//        Long currentUserId = SecurityUtils.getCurrentUserId();
+//
+//        // 2. Find the doctor linked to this user
+//        Doctor doctor = doctorRepository.findAll().stream()
+//                .filter(d -> d.getUser().getId().equals(currentUserId))
+//                .findFirst()
+//                .orElseThrow(() -> new RuntimeException("Doctor profile not found for user ID: " + currentUserId));
+//
+//        // 3. Get slots for this doctor
+//        List<AvailabilitySlot> slots = availabilitySlotRepository.findAll().stream()
+//                .filter(s -> s.getDoctor().getId().equals(doctor.getId()))
+//                .toList();
+//
+//        // 4. Map to DTO with formatting
+//        return slots.stream()
+//                .map(slot -> new AvailabilitySlotResponseDto(
+//                        slot.getId(),
+//                        slot.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+//                        slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                        slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                        slot.isReserved()
+//                ))
+//                .toList();
+//    }
+
 
     private boolean isSlotInFuture(AvailabilitySlot slot) {
         LocalDate today = LocalDate.now();
