@@ -53,12 +53,21 @@ public class AdminController {
         return ResponseEntity.ok(updatedDoctor);
     }
 
-    @PostMapping("/doctor/{doctorId}/add-slot")
-    public ResponseEntity<SlotResponseDto> addSlot(
+//    @PostMapping("/doctor/{doctorId}/add-slot")
+//    public ResponseEntity<SlotResponseDto> addSlot(
+//            @PathVariable Long doctorId,
+//            @Valid @RequestBody SlotCreateDto dto
+//    ) {
+//        SlotResponseDto response = adminService.addSlot(doctorId, dto);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//    }
+
+    @PostMapping("/doctor/{doctorId}/add-slots")
+    public ResponseEntity<List<SlotResponseDto>> addDaySlots(
             @PathVariable Long doctorId,
-            @Valid @RequestBody SlotCreateDto dto
+            @Valid @RequestBody DaySlotsCreateDto dto
     ) {
-        SlotResponseDto response = adminService.addSlot(doctorId, dto);
+        List<SlotResponseDto> response = adminService.addDaySlots(doctorId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

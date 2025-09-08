@@ -21,10 +21,12 @@ import org.example.healthcare_appointment_system.repo.PatientRepository;
 import org.example.healthcare_appointment_system.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,61 +39,143 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
 
+//    public List<AppointmentResponseDto> getMyAppointments() {
+//        // Get the currently logged-in user's ID
+//        Long currentUserId = SecurityUtils.getCurrentUserId();
+//
+//        // Find the doctor associated with this user ID
+//        Doctor doctor = doctorRepository.findByUserId(currentUserId)
+//                .orElseThrow(() -> new RuntimeException("Doctor not found for current user"));
+//
+//        // Get appointments for this specific doctor
+//        return appointmentRepository.findByDoctorId(doctor.getId())
+//                .stream()
+//                .map(a -> new AppointmentResponseDto(
+//                        a.getId(),
+//                        a.getDoctor().getUser().getUsername(),
+//                        a.getPatient().getUser().getUsername(),
+//                        a.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+//                        a.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                        a.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                        a.getStatus().name()
+//                ))
+//                .toList();
+//    }
+
     public List<AppointmentResponseDto> getMyAppointments() {
-        // Get the currently logged-in user's ID
+        // 1. Get the currently logged-in user's ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Find the doctor associated with this user ID
+        // 2. Find the doctor associated with this user ID
         Doctor doctor = doctorRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found for current user"));
 
-        // Get appointments for this specific doctor
+        // 3. Get appointments for this doctor
         return appointmentRepository.findByDoctorId(doctor.getId())
                 .stream()
-                .map(a -> new AppointmentResponseDto(
-                        a.getId(),
-                        a.getDoctor().getUser().getUsername(),
-                        a.getPatient().getUser().getUsername(),
-                        a.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-                        a.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                        a.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                        a.getStatus().name()
-                ))
+                .map(a -> {
+                    AvailabilitySlot slot = a.getSlot();
+
+                    return new AppointmentResponseDto(
+                            a.getId(),
+                            a.getDoctor().getUser().getUsername(),
+                            a.getPatient().getUser().getUsername(),
+                            slot.getDayOfWeek().name(),  // use day of week instead of date
+                            slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                            slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                            a.getStatus().name()
+                    );
+                })
                 .toList();
     }
 
+
+//    public AppointmentResponseDto bookAppointment(BookAppointmentDto dto) {
+//        // Get the currently logged-in user's ID
+//        Long currentUserId = SecurityUtils.getCurrentUserId();
+//
+//        // Find the patient associated with this user ID
+//        Patient patient = patientRepository.findByUserId(currentUserId)
+//                .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
+//
+//        if (appointmentRepository.existsBySlotIdAndStatus(dto.slotId(), AppointmentStatus.BOOKED)) {
+//            throw new IllegalStateException("This slot is already booked");
+//        }
+//
+//        Doctor doctor = doctorRepository.findById(dto.doctorId())
+//                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+//
+//        AvailabilitySlot slot = slotRepository.findById(dto.slotId())
+//                .orElseThrow(() -> new RuntimeException("Slot not found"));
+//
+//        // Prevent double booking
+//        if (slot.isReserved()) {
+//            throw new RuntimeException("This slot is already booked");
+//        }
+//
+//        // Mark the slot as reserved
+//        slot.setReserved(true);
+//        slotRepository.save(slot);
+//
+//        Appointment appointment = new Appointment();
+//        appointment.setDoctor(doctor);
+//        appointment.setPatient(patient);  // Use the auto-detected patient
+//        appointment.setSlot(slot);
+//        appointment.setAppointmentTime(LocalDateTime.of(slot.getDate(), slot.getStartTime()));
+//        appointment.setStatus(AppointmentStatus.BOOKED);
+//
+//        Appointment savedAppointment = appointmentRepository.save(appointment);
+//
+//        return new AppointmentResponseDto(
+//                savedAppointment.getId(),
+//                savedAppointment.getDoctor().getUser().getUsername(),
+//                savedAppointment.getPatient().getUser().getUsername(),
+//                savedAppointment.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+//                savedAppointment.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                savedAppointment.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                savedAppointment.getStatus().name()
+//        );
+//    }
+
     public AppointmentResponseDto bookAppointment(BookAppointmentDto dto) {
-        // Get the currently logged-in user's ID
+        // 1. Get the currently logged-in user's ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Find the patient associated with this user ID
+        // 2. Find the patient associated with this user ID
         Patient patient = patientRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
 
+        // 3. Check if the slot is already booked
         if (appointmentRepository.existsBySlotIdAndStatus(dto.slotId(), AppointmentStatus.BOOKED)) {
             throw new IllegalStateException("This slot is already booked");
         }
 
+        // 4. Find doctor and slot
         Doctor doctor = doctorRepository.findById(dto.doctorId())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         AvailabilitySlot slot = slotRepository.findById(dto.slotId())
                 .orElseThrow(() -> new RuntimeException("Slot not found"));
 
-        // Prevent double booking
         if (slot.isReserved()) {
             throw new RuntimeException("This slot is already booked");
         }
 
-        // Mark the slot as reserved
+        // 5. Mark the slot as reserved
         slot.setReserved(true);
         slotRepository.save(slot);
 
+        // 6. Compute the next date for the slot's dayOfWeek
+        LocalDate nextDate = LocalDate.now().with(TemporalAdjusters.nextOrSame(
+                DayOfWeek.valueOf(slot.getDayOfWeek().name())
+        ));
+
+        // 7. Create appointment
         Appointment appointment = new Appointment();
         appointment.setDoctor(doctor);
-        appointment.setPatient(patient);  // Use the auto-detected patient
+        appointment.setPatient(patient);
         appointment.setSlot(slot);
-        appointment.setAppointmentTime(LocalDateTime.of(slot.getDate(), slot.getStartTime()));
+        appointment.setAppointmentTime(LocalDateTime.of(nextDate, slot.getStartTime()));
         appointment.setStatus(AppointmentStatus.BOOKED);
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
@@ -100,12 +184,13 @@ public class AppointmentService {
                 savedAppointment.getId(),
                 savedAppointment.getDoctor().getUser().getUsername(),
                 savedAppointment.getPatient().getUser().getUsername(),
-                savedAppointment.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-                savedAppointment.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                savedAppointment.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                slot.getDayOfWeek().name(),  // return day of week instead of date
+                slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 savedAppointment.getStatus().name()
         );
     }
+
 
     public AppointmentResponseDto markAppointmentCompleted(Long appointmentId) {
         // Get the currently logged-in doctor's ID
@@ -136,11 +221,22 @@ public class AppointmentService {
                 saved.getId(),
                 saved.getDoctor().getUser().getUsername(),
                 saved.getPatient().getUser().getUsername(),
-                saved.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+                saved.getSlot().getDayOfWeek().name(),  // use day of week instead of date
                 saved.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 saved.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 saved.getStatus().name()
         );
+
+
+//        return new AppointmentResponseDto(
+//                saved.getId(),
+//                saved.getDoctor().getUser().getUsername(),
+//                saved.getPatient().getUser().getUsername(),
+//                saved.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+//                saved.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                saved.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                saved.getStatus().name()
+//        );
     }
 
     public List<AvailabilitySlotResponseDto> getMyAvailableSlots() {
@@ -165,12 +261,13 @@ public class AppointmentService {
         return slots.stream()
                 .map(slot -> new AvailabilitySlotResponseDto(
                         slot.getId(),
-                        slot.getDate().format(dateFormatter),
+                        slot.getDayOfWeek().name(),  // use day of week instead of date
                         slot.getStartTime().format(timeFormatter),
                         slot.getEndTime().format(timeFormatter),
                         slot.isReserved()
                 ))
                 .toList();
+
     }
 
 
@@ -202,16 +299,16 @@ public class AppointmentService {
 //    }
 
 
-    private boolean isSlotInFuture(AvailabilitySlot slot) {
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
-
-        if (slot.getDate().isAfter(today)) {
-            return true; // Future date
-        } else if (slot.getDate().isEqual(today)) {
-            return slot.getStartTime().isAfter(now); // Today but future time
-        }
-        return false; // Past date
-    }
+//    private boolean isSlotInFuture(AvailabilitySlot slot) {
+//        LocalDate today = LocalDate.now();
+//        LocalTime now = LocalTime.now();
+//
+//        if (slot.getDate().isAfter(today)) {
+//            return true; // Future date
+//        } else if (slot.getDate().isEqual(today)) {
+//            return slot.getStartTime().isAfter(now); // Today but future time
+//        }
+//        return false; // Past date
+//    }
 
 }

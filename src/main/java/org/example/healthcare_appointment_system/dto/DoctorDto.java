@@ -24,6 +24,8 @@ public record DoctorDto(
         @NotBlank(message = "Specialty is required")
         String specialty,
 
-        List<AvailabilitySlotDto> slots
+        List<DaySlotsCreateDto> slots
+
+//        List<AvailabilitySlotDto> slots
 ) {
 }

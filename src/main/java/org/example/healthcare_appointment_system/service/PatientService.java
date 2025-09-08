@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.AOP.CancelAppointmentCheck;
 import org.example.healthcare_appointment_system.dto.*;
 import org.example.healthcare_appointment_system.entity.Appointment;
+import org.example.healthcare_appointment_system.entity.AvailabilitySlot;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.AppointmentStatus;
@@ -161,30 +162,77 @@ public class PatientService {
         );
     }
 
-
     public List<AppointmentResponseDto> getMyAppointments() {
-        // Get the currently logged-in user's ID
+        // 1. Get the currently logged-in user's ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Find the patient associated with this user ID
+        // 2. Find the patient associated with this user ID
         Patient patient = patientRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
 
-        // Get appointments for this specific patient
+        // 3. Get appointments for this specific patient
         return appointmentRepository.findByPatientId(patient.getId())
                 .stream()
-                .map(app -> new AppointmentResponseDto(
-                        app.getId(),
-                        app.getDoctor().getUser().getUsername(),
-                        app.getPatient().getUser().getUsername(),
-                        app.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-                        app.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                        app.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                        app.getStatus().name()
-                ))
+                .map(app -> {
+                    AvailabilitySlot slot = app.getSlot();
+
+                    return new AppointmentResponseDto(
+                            app.getId(),
+                            app.getDoctor().getUser().getUsername(),
+                            app.getPatient().getUser().getUsername(),
+                            slot.getDayOfWeek().name(),                     // day of week instead of date
+                            slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                            slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                            app.getStatus().name()
+                    );
+                })
                 .toList();
     }
 
+
+//    public List<AppointmentResponseDto> getMyAppointments() {
+//        // Get the currently logged-in user's ID
+//        Long currentUserId = SecurityUtils.getCurrentUserId();
+//
+//        // Find the patient associated with this user ID
+//        Patient patient = patientRepository.findByUserId(currentUserId)
+//                .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
+//
+//        // Get appointments for this specific patient
+//        return appointmentRepository.findByPatientId(patient.getId())
+//                .stream()
+//                .map(app -> new AppointmentResponseDto(
+//                        app.getId(),
+//                        app.getDoctor().getUser().getUsername(),
+//                        app.getPatient().getUser().getUsername(),
+//                        app.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+//                        app.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                        app.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                        app.getStatus().name()
+//                ))
+//                .toList();
+//    }
+
+    //    @CancelAppointmentCheck
+//    @Transactional
+//    public AppointmentResponseDto cancelAppointment(Long appointmentId) {
+//        Appointment appointment = appointmentRepository.findById(appointmentId)
+//                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+//
+//        // Update status
+//        appointment.setStatus(AppointmentStatus.CANCELLED);
+//        appointmentRepository.save(appointment);
+//
+//        return new AppointmentResponseDto(
+//                appointment.getId(),
+//                appointment.getDoctor().getUser().getUsername(),
+//                appointment.getPatient().getUser().getUsername(),
+//                appointment.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+//                appointment.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                appointment.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+//                appointment.getStatus().name()
+//        );
+//    }
     @CancelAppointmentCheck
     @Transactional
     public AppointmentResponseDto cancelAppointment(Long appointmentId) {
@@ -195,15 +243,18 @@ public class PatientService {
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
 
+        AvailabilitySlot slot = appointment.getSlot();
+
         return new AppointmentResponseDto(
                 appointment.getId(),
                 appointment.getDoctor().getUser().getUsername(),
                 appointment.getPatient().getUser().getUsername(),
-                appointment.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-                appointment.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                appointment.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                slot.getDayOfWeek().name(),  // use day of week instead of date
+                slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 appointment.getStatus().name()
         );
     }
+
 }
 
