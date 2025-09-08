@@ -1,9 +1,8 @@
 package org.example.healthcare_appointment_system.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
+
+import java.util.List;
 
 public record DoctorDto(
         @NotBlank(message = "Username is required")
@@ -23,6 +22,8 @@ public record DoctorDto(
         String email,
 
         @NotBlank(message = "Specialty is required")
-        String specialty
+        String specialty,
+
+        List<AvailabilitySlotDto> slots
 ) {
 }

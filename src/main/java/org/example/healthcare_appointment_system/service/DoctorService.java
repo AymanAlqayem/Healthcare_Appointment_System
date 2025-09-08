@@ -6,14 +6,17 @@ import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.DoctorDto;
 import org.example.healthcare_appointment_system.dto.DoctorResponseDto;
 import org.example.healthcare_appointment_system.dto.DoctorUpdateDto;
+import org.example.healthcare_appointment_system.entity.AvailabilitySlot;
 import org.example.healthcare_appointment_system.entity.Doctor;
 import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.repo.DoctorRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +33,13 @@ public class DoctorService {
     @Transactional
     public DoctorResponseDto createDoctor(DoctorDto dto) {
         if (userRepository.existsByUsername(dto.username())) {
-            throw new RuntimeException("Username already exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
         }
-
         if (userRepository.existsByEmail(dto.email())) {
-            throw new RuntimeException("Email already exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already exists");
         }
-
         if (userRepository.existsByPhone(dto.phone())) {
-            throw new RuntimeException("Phone already exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phone already exists");
         }
 
         // Create User account
@@ -53,23 +54,39 @@ public class DoctorService {
 
         userRepository.save(user);
 
-        // Create Doctor profile linked to user
+        // Create Doctor profile
         Doctor doctor = new Doctor();
         doctor.setUser(user);
         doctor.setSpecialty(dto.specialty());
 
-        // Save doctor to DB
+        // Handle slots if provided
+        if (dto.slots() != null && !dto.slots().isEmpty()) {
+            List<AvailabilitySlot> slots = dto.slots().stream()
+                    .map(slotDto -> {
+                        AvailabilitySlot slot = new AvailabilitySlot();
+                        slot.setDate(slotDto.date());
+                        slot.setStartTime(slotDto.startTime());
+                        slot.setEndTime(slotDto.endTime());
+                        slot.setReserved(false);
+                        slot.setDoctor(doctor);
+                        return slot;
+                    })
+                    .toList();
+            doctor.setAvailabilitySlots(slots);
+        }
+
         Doctor savedDoctor = doctorRepository.save(doctor);
 
-        // Return response DTO
+        // Return response
         return new DoctorResponseDto(
                 savedDoctor.getId(),
-                savedDoctor.getUser().getUsername(),
-                savedDoctor.getUser().getEmail(),
-                savedDoctor.getUser().getPhone(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhone(),
                 savedDoctor.getSpecialty()
         );
     }
+
 
     public List<DoctorResponseDto> getAllDoctors() {
         return doctorRepository.findAll()
