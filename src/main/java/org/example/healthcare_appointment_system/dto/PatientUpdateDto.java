@@ -10,9 +10,6 @@ import org.example.healthcare_appointment_system.enums.Gender;
 import java.time.LocalDate;
 
 public record PatientUpdateDto(
-        @NotNull(message = "Patient ID is required")
-        Long id,
-
         @NotBlank(message = "Phone is required")
         @Pattern(regexp = "\\d{10}", message = "Phone must be exactly 10 digits")
         String phone,

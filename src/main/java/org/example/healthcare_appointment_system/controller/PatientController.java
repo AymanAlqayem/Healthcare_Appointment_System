@@ -44,8 +44,10 @@ public class PatientController {
     }
 
     @GetMapping("/appointments")
-    public List<AppointmentResponseDto> getMyAppointments(@RequestParam Long patientId) {
-        return patientService.getAppointments(patientId);
+    public ResponseEntity<List<AppointmentResponseDto>> getMyAppointments() {
+        // No need for @RequestParam - automatically gets current patient's appointments
+        List<AppointmentResponseDto> appointments = patientService.getMyAppointments();
+        return ResponseEntity.ok(appointments);
     }
 
     @PutMapping("/cancel-appointment/{id}")

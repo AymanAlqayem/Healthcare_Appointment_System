@@ -8,10 +8,12 @@ import org.example.healthcare_appointment_system.entity.Appointment;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.AppointmentStatus;
+import org.example.healthcare_appointment_system.enums.Gender;
 import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.repo.AppointmentRepository;
 import org.example.healthcare_appointment_system.repo.PatientRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
+import org.example.healthcare_appointment_system.security.SecurityUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -101,47 +103,51 @@ public class PatientService {
                 .toList();
     }
 
-    @Transactional
-    public PatientResponseDto updatePatient(PatientUpdateDto dto) {
-        Patient patient = patientRepository.findById(dto.id())
-                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + dto.id()));
+//    @Transactional
+//    public PatientResponseDto updatePatient(PatientUpdateDto dto) {
+//        Patient patient = patientRepository.findById(dto.id())
+//                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + dto.id()));
+//
+//        User user = patient.getUser();
+//
+//        // Check for email uniqueness if changed
+//        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
+//            throw new RuntimeException("Email already exists");
+//        }
+//
+//        // Update user fields
+//        user.setEmail(dto.email());
+//        user.setPhone(dto.phone());
+//        userRepository.save(user);
+//
+//        // Update patient-specific fields
+//        patient.setGender(dto.gender());
+//        patient.setDateOfBirth(dto.dateOfBirth());
+//        patientRepository.save(patient);
+//
+//        // Map to response DTO
+//        return new PatientResponseDto(
+//                patient.getId(),
+//                user.getUsername(),
+//                user.getEmail(),
+//                patient.getGender().name(),
+//                patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+//        );
+//    }
 
-        User user = patient.getUser();
 
-        // Check for email uniqueness if changed
-        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
-            throw new RuntimeException("Email already exists");
-        }
-
-        // Update user fields
-        user.setEmail(dto.email());
-        user.setPhone(dto.phone());
-        userRepository.save(user);
-
-        // Update patient-specific fields
-        patient.setGender(dto.gender());
-        patient.setDateOfBirth(dto.dateOfBirth());
-        patientRepository.save(patient);
-
-        // Map to response DTO
-        return new PatientResponseDto(
-                patient.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                patient.getGender().name(),
-                patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-        );
-    }
-
-    @Transactional
     public PatientResponseDto updateInfo(PatientUpdateDto dto) {
-        Patient patient = patientRepository.findById(dto.id())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+        // Get the currently logged-in user's ID
+        Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Update fields
+        // Find the patient associated with this user ID
+        Patient patient = patientRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
+
+        // Update fields - no need to find by ID since we already have the patient
         patient.getUser().setPhone(dto.phone());
         patient.getUser().setEmail(dto.email());
-        patient.setGender(dto.gender());
+        patient.setGender(dto.gender());  // Convert string to enum if needed
         patient.setDateOfBirth(dto.dateOfBirth());
 
         Patient savedPatient = patientRepository.save(patient);
@@ -156,11 +162,16 @@ public class PatientService {
     }
 
 
-    public List<AppointmentResponseDto> getAppointments(Long patientId) {
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+    public List<AppointmentResponseDto> getMyAppointments() {
+        // Get the currently logged-in user's ID
+        Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        return appointmentRepository.findByPatientId(patientId)
+        // Find the patient associated with this user ID
+        Patient patient = patientRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
+
+        // Get appointments for this specific patient
+        return appointmentRepository.findByPatientId(patient.getId())
                 .stream()
                 .map(app -> new AppointmentResponseDto(
                         app.getId(),
