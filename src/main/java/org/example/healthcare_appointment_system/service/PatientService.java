@@ -104,39 +104,6 @@ public class PatientService {
                 .toList();
     }
 
-//    @Transactional
-//    public PatientResponseDto updatePatient(PatientUpdateDto dto) {
-//        Patient patient = patientRepository.findById(dto.id())
-//                .orElseThrow(() -> new RuntimeException("Patient not found with id: " + dto.id()));
-//
-//        User user = patient.getUser();
-//
-//        // Check for email uniqueness if changed
-//        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
-//            throw new RuntimeException("Email already exists");
-//        }
-//
-//        // Update user fields
-//        user.setEmail(dto.email());
-//        user.setPhone(dto.phone());
-//        userRepository.save(user);
-//
-//        // Update patient-specific fields
-//        patient.setGender(dto.gender());
-//        patient.setDateOfBirth(dto.dateOfBirth());
-//        patientRepository.save(patient);
-//
-//        // Map to response DTO
-//        return new PatientResponseDto(
-//                patient.getId(),
-//                user.getUsername(),
-//                user.getEmail(),
-//                patient.getGender().name(),
-//                patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-//        );
-//    }
-
-
     public PatientResponseDto updateInfo(PatientUpdateDto dto) {
         // Get the currently logged-in user's ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
@@ -189,50 +156,6 @@ public class PatientService {
                 .toList();
     }
 
-
-//    public List<AppointmentResponseDto> getMyAppointments() {
-//        // Get the currently logged-in user's ID
-//        Long currentUserId = SecurityUtils.getCurrentUserId();
-//
-//        // Find the patient associated with this user ID
-//        Patient patient = patientRepository.findByUserId(currentUserId)
-//                .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
-//
-//        // Get appointments for this specific patient
-//        return appointmentRepository.findByPatientId(patient.getId())
-//                .stream()
-//                .map(app -> new AppointmentResponseDto(
-//                        app.getId(),
-//                        app.getDoctor().getUser().getUsername(),
-//                        app.getPatient().getUser().getUsername(),
-//                        app.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-//                        app.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-//                        app.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-//                        app.getStatus().name()
-//                ))
-//                .toList();
-//    }
-
-    //    @CancelAppointmentCheck
-//    @Transactional
-//    public AppointmentResponseDto cancelAppointment(Long appointmentId) {
-//        Appointment appointment = appointmentRepository.findById(appointmentId)
-//                .orElseThrow(() -> new RuntimeException("Appointment not found"));
-//
-//        // Update status
-//        appointment.setStatus(AppointmentStatus.CANCELLED);
-//        appointmentRepository.save(appointment);
-//
-//        return new AppointmentResponseDto(
-//                appointment.getId(),
-//                appointment.getDoctor().getUser().getUsername(),
-//                appointment.getPatient().getUser().getUsername(),
-//                appointment.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-//                appointment.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-//                appointment.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-//                appointment.getStatus().name()
-//        );
-//    }
     @CancelAppointmentCheck
     @Transactional
     public AppointmentResponseDto cancelAppointment(Long appointmentId) {
@@ -255,6 +178,25 @@ public class PatientService {
                 appointment.getStatus().name()
         );
     }
+
+    public ResponseEntity<PatientResponseDto> findPatient(String name) {
+        User user = userRepository.findByUsername(name)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + name));
+
+        Patient patient = patientRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("No patient profile found for user: " + name));
+
+        PatientResponseDto dto = new PatientResponseDto(
+                patient.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                patient.getGender().name(),
+                patient.getDateOfBirth().toString()
+        );
+
+        return ResponseEntity.ok(dto);
+    }
+
 
 }
 

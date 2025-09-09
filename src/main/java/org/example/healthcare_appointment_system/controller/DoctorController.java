@@ -1,11 +1,11 @@
 package org.example.healthcare_appointment_system.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.healthcare_appointment_system.dto.AppointmentResponseDto;
-import org.example.healthcare_appointment_system.dto.AvailabilitySlotResponseDto;
-import org.example.healthcare_appointment_system.service.AppointmentService;
-import org.example.healthcare_appointment_system.service.DoctorService;
+import org.example.healthcare_appointment_system.dto.*;
+import org.example.healthcare_appointment_system.service.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +19,10 @@ import java.util.List;
 public class DoctorController {
     private final DoctorService doctorService;
     private final AppointmentService appointmentService;
+    private final PatientService patientService;
+    private final PrescriptionService prescriptionService;
+    private final MedicalRecordService medicalRecordService;
+
 
     @GetMapping("/appointments")
     public ResponseEntity<List<AppointmentResponseDto>> getMyAppointments() {
@@ -32,25 +36,30 @@ public class DoctorController {
         return ResponseEntity.ok(slots);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @PutMapping("/appointments/{id}/complete")
-    public ResponseEntity<AppointmentResponseDto> completeAppointment(@PathVariable Long id) {
+    @PutMapping("/appointments/{appointmentId}/complete")
+    public ResponseEntity<AppointmentResponseDto> completeAppointment(@PathVariable Long appointmentId) {
         // No need to pass doctorId - it's automatically retrieved from security context
-        AppointmentResponseDto updated = appointmentService.markAppointmentCompleted(id);
+        AppointmentResponseDto updated = appointmentService.markAppointmentCompleted(appointmentId);
         return ResponseEntity.ok(updated);
     }
 
+    @GetMapping("/find-patient")
+    public ResponseEntity<PatientResponseDto> getPatientId(@RequestParam String name) {
+        return patientService.findPatient(name);
+    }
+
+    @PostMapping("/write-prescription/{patientId}")
+    public ResponseEntity<PrescriptionResponseDto> writePrescription(
+            @PathVariable Long patientId,
+            @Valid @RequestBody PrescriptionDto dto
+    ) {
+        PrescriptionResponseDto response = prescriptionService.createPrescription(patientId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/medical-history/{patientId}")
+    public ResponseEntity<MedicalHistoryResponseDto> getMedicalHistory(@PathVariable("patientId") Long patientId) {
+        MedicalHistoryResponseDto response = medicalRecordService.getPatientMedicalHistory(patientId);
+        return ResponseEntity.ok(response);
+    }
 }

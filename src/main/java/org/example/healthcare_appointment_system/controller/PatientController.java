@@ -29,7 +29,7 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("update-info/{id}")
+    @PutMapping("update-info")
     public ResponseEntity<PatientResponseDto> updateInfo(@RequestBody @Valid PatientUpdateDto dto) {
         PatientResponseDto updatedPatient = patientService.updateInfo(dto);
         return ResponseEntity.ok(updatedPatient);
@@ -50,7 +50,7 @@ public class PatientController {
         return ResponseEntity.ok(appointments);
     }
 
-    @PutMapping("/cancel-appointment/{id}")
+    @PutMapping("/cancel-appointment/{appointmentId}")
     public ResponseEntity<AppointmentResponseDto> cancelAppointment(@PathVariable Long id) {
         AppointmentResponseDto response = patientService.cancelAppointment(id);
         return ResponseEntity.ok(response);

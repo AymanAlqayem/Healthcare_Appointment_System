@@ -196,48 +196,42 @@ public class AppointmentService {
         // Get the currently logged-in doctor's ID
         Long currentDoctorId = SecurityUtils.getCurrentUserId();
 
-        // First, get the doctor entity to ensure it exists
-        Doctor doctor = doctorRepository.findById(currentDoctorId)
+        Doctor doctor = doctorRepository.findByUserId(currentDoctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
         // Ensure the appointment belongs to this doctor
-        if (!appointment.getDoctor().getId().equals(currentDoctorId)) {
+        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
             throw new RuntimeException("You can only complete your own appointments");
         }
 
-        // Ensure the appointment is reserved
+        // Ensure it's actually booked
         if (!appointment.getSlot().isReserved()) {
             throw new RuntimeException("Cannot complete an appointment that is not reserved");
         }
 
-        // Update status
+        // Update appointment status
         appointment.setStatus(AppointmentStatus.COMPLETED);
+
+        // Free up the slot again for future reservations
+        appointment.getSlot().setReserved(false);
+
         Appointment saved = appointmentRepository.save(appointment);
+        slotRepository.save(appointment.getSlot());
 
         return new AppointmentResponseDto(
                 saved.getId(),
                 saved.getDoctor().getUser().getUsername(),
                 saved.getPatient().getUser().getUsername(),
-                saved.getSlot().getDayOfWeek().name(),  // use day of week instead of date
+                saved.getSlot().getDayOfWeek().name(),
                 saved.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 saved.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 saved.getStatus().name()
         );
-
-
-//        return new AppointmentResponseDto(
-//                saved.getId(),
-//                saved.getDoctor().getUser().getUsername(),
-//                saved.getPatient().getUser().getUsername(),
-//                saved.getSlot().getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
-//                saved.getSlot().getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-//                saved.getSlot().getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-//                saved.getStatus().name()
-//        );
     }
+
 
     public List<AvailabilitySlotResponseDto> getMyAvailableSlots() {
         // 1. Get logged-in user ID

@@ -92,12 +92,6 @@ public class AdminController {
         return patientService.deletePatient(id);
     }
 
-//    @PutMapping("/update-patient")
-//    public ResponseEntity<PatientResponseDto> updatePatient(@RequestBody @Valid PatientUpdateDto dto) {
-//        PatientResponseDto updatedPatient = patientService.updatePatient(dto);
-//        return ResponseEntity.ok(updatedPatient);
-//    }
-
 
     @GetMapping("/patients")
     public List<PatientResponseDto> getPatients() {
