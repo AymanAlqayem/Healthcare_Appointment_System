@@ -29,8 +29,8 @@ server:
 app:
   jwt:
     secret: "mysupersecretkeymysupersecretkey"
-    expiration: 3600000      # access token (1 hour)
-    refreshExpiration: 1209600000  # refresh token (14 days)
+    expiration: 1800000  # 30 minutes
+    refresh-expiration: 1209600000  # refresh token (14 days)
 
 # For springdoc UI (optional)
 springdoc:

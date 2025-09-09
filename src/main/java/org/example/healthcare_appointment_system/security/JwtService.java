@@ -2,6 +2,7 @@ package org.example.healthcare_appointment_system.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,18 +14,22 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Getter
 public class JwtService {
     private final Key key;//cryptographic key used to sign and verify JWTs
     private final long expirationMs;
+    private final long refreshExpirationMs; // Add refresh token expiration
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.expiration}") long expirationMs
+            @Value("${app.jwt.expiration}") long expirationMs,
+            @Value("${app.jwt.refresh-expiration}") long refreshExpirationMs
     ) {
         //builds an HMAC-SHA256 key from the secret string.
         //This key is used both for signing tokens and validating them.
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
+        this.refreshExpirationMs = refreshExpirationMs;
     }
 
 
@@ -61,24 +66,83 @@ public class JwtService {
                 .parseClaimsJws(token);
     }
 
-    public long getExpirationMs() {
-        return expirationMs;
-    }
-
     public String generateAccessToken(String username, Collection<String> roles) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", roles)
+                .claim("type", "access")  // <-- Add type claim
                 .setIssuedAt(now)
                 .setExpiration(exp)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String generateRefreshTokenString() {
-        // A refresh token can be a JWT or a random UUID. We'll use a cryptographically strong UUID here.
-        return UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+    public String generateRefreshToken(String username) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + refreshExpirationMs);
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("type", "refresh")  // <-- Add type claim
+                .setIssuedAt(now)
+                .setExpiration(exp)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
+
+
+//    public String generateAccessToken(String username, Collection<String> roles) {
+//        Date now = new Date();
+//        Date exp = new Date(now.getTime() + expirationMs);
+//        return Jwts.builder()
+//                .setSubject(username)
+//                .claim("roles", roles)
+//                .setIssuedAt(now)
+//                .setExpiration(exp)
+//                .signWith(key, SignatureAlgorithm.HS256)
+//                .compact();
+//    }
+//
+//
+//    public String generateRefreshToken(String username) {
+//        Date now = new Date();
+//        Date exp = new Date(now.getTime() + refreshExpirationMs);
+//        return Jwts.builder()
+//                .setSubject(username)
+//                .setIssuedAt(now)
+//                .setExpiration(exp)
+//                .signWith(key, SignatureAlgorithm.HS256)
+//                .compact();
+//    }
+
+    public boolean isRefreshTokenValid(String token) {
+        try {
+            Jws<Claims> claims = Jwts.parser()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token);
+
+            // Check expiration
+            boolean notExpired = !claims.getBody().getExpiration().before(new Date());
+            // Check type
+            boolean isRefresh = "refresh".equals(claims.getBody().get("type", String.class));
+
+            return notExpired && isRefresh;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+//    public boolean isRefreshTokenValid(String token) {
+//        try {
+//            Jws<Claims> claims = Jwts.parser()
+//                    .setSigningKey(key)
+//                    .build()
+//                    .parseClaimsJws(token);
+//            return !claims.getBody().getExpiration().before(new Date());
+//        } catch (JwtException | IllegalArgumentException e) {
+//            return false;
+//        }
+//    }
 }
