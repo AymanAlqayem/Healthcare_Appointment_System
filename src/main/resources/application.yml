@@ -10,6 +10,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: jcache
+          javax:
+            cache:
+              provider: org.ehcache.jsr107.EhcacheCachingProvider
+              uri: classpath:ehcache.xml
   data:
     mongodb:
       uri: mongodb://localhost:27017/clinicdb
@@ -30,3 +39,9 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Cache statistics (optional)
+logging:
+  level:
+    org.hibernate.cache: DEBUG
+    org.hibernate.stat: DEBUG

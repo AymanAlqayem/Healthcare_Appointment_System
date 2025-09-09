@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.ehcache.org/v3"
+        xsi:schemaLocation="
+            http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.10.xsd">
+    <!--
+    CACHE 1: Individual Doctor Entities
+    Stores Doctor objects by their ID
+    -->
+    <cache alias="doctors">
+        <key-type>java.lang.Long</key-type>
+        <value-type>org.example.healthcare_appointment_system.entity.Doctor
+        </value-type> <!-- Cache value: Doctor object -->
+        <expiry>
+            <ttl unit="minutes">30</ttl>            <!-- Time-to-Live: 30 minutes -->
+        </expiry>
+        <heap unit="entries">1000</heap>            <!-- Max 1000 doctors in memory -->
+    </cache>
+
+    <!--
+    CACHE 2: Doctors by Specialty Query Results
+    Stores Lists of Doctors for each specialty search
+    -->
+    <cache alias="doctorBySpecialty">
+        <key-type>java.lang.String</key-type>        <!-- Cache key: Specialty name ("Cardiology", "Neurology") -->
+        <value-type>java.util.List</value-type>      <!-- Cache value: List of Doctor objects -->
+        <expiry>
+            <ttl unit="minutes">15</ttl>            <!-- TTL: 15 minutes (shorter because specialties might change) -->
+        </expiry>
+        <heap unit="entries">100</heap>             <!-- Max 100 different specialty searches in memory -->
+    </cache>
+
+    <!--
+    CACHE 3: All Doctors Query Result
+    Stores the complete list of all doctors
+    -->
+    <cache alias="allDoctors">
+        <key-type>java.lang.String</key-type>
+        <value-type>java.util.List</value-type>      <!-- Cache value: List of all Doctor objects -->
+        <expiry>
+            <ttl unit="minutes">10</ttl>            <!-- TTL: 10 minutes (short because doctors list changes often) -->
+        </expiry>
+        <heap unit="entries">10</heap>
+    </cache>
+</config>
