@@ -86,7 +86,7 @@ public class DoctorService {
                 .map(slot -> new AvailabilitySlotResponseDto(
                         slot.getId(),
                         slot.getDayOfWeek().name(),
-                            slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         slot.isReserved()
                 ))
