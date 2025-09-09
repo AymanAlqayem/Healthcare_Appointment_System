@@ -1,0 +1,22 @@
+<ehcache:config xmlns:ehcache="http://www.ehcache.org/v3">
+    <ehcache:cache alias="com.example.model.Doctor">
+        <ehcache:heap unit="entries">1000</ehcache:heap>
+        <ehcache:expiry>
+            <ehcache:ttl unit="minutes">30</ehcache:ttl>
+        </ehcache:expiry>
+    </ehcache:cache>
+
+    <ehcache:cache alias="com.example.model.AvailabilitySlot">
+        <ehcache:heap unit="entries">1000</ehcache:heap>
+        <ehcache:expiry>
+            <ehcache:ttl unit="minutes">30</ehcache:ttl>
+        </ehcache:expiry>
+    </ehcache:cache>
+
+    <ehcache:cache alias="com.example.model.Appointment">
+        <ehcache:heap unit="entries">1000</ehcache:heap>
+        <ehcache:expiry>
+            <ehcache:ttl unit="minutes">30</ehcache:ttl>
+        </ehcache:expiry>
+    </ehcache:cache>
+</ehcache:config>
