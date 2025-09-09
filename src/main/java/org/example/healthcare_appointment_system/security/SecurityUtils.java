@@ -23,14 +23,4 @@ public class SecurityUtils {
         }
         return authentication != null ? authentication.getName() : null;
     }
-
-    // Add method to check current user role
-    public static boolean hasRole(String role) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            return authentication.getAuthorities().stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role));
-        }
-        return false;
-    }
 }

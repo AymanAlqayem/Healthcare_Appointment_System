@@ -25,7 +25,5 @@ public record DoctorDto(
         String specialty,
 
         List<DaySlotsCreateDto> slots
-
-//        List<AvailabilitySlotDto> slots
 ) {
 }

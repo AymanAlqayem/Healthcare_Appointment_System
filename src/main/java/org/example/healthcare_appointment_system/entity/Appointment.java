@@ -31,7 +31,6 @@ public class Appointment {
     @Column(name = "appointment_time", nullable = false)
     private LocalDateTime appointmentTime;
 
-
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status = AppointmentStatus.BOOKED;
 }

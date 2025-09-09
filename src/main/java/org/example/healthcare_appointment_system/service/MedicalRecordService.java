@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.document.Prescription;
 import org.example.healthcare_appointment_system.dto.MedicalHistoryResponseDto;
 import org.example.healthcare_appointment_system.dto.PrescriptionHistoryDto;
-import org.example.healthcare_appointment_system.dto.PrescriptionResponseDto;
 import org.example.healthcare_appointment_system.entity.Appointment;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.repo.AppointmentRepository;
@@ -19,7 +18,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MedicalRecordService {
-
     private final PrescriptionRepository prescriptionRepository;
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;

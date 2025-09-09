@@ -12,13 +12,9 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfig {
     private static final String SCHEME_NAME = "bearerAuth";
 
-    /**
-     * This bean customizes the OpenAPI (Swagger) documentation:
-     * */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                //Sets the title and version in Swagger UI.
                 .info(new Info().title("Clinic API").version("v1"))
                 .components(new Components().addSecuritySchemes(SCHEME_NAME,
                         new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))

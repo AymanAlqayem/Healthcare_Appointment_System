@@ -15,9 +15,9 @@ public class Prescription {
     @Id
     private String id;
 
-    private Long patientId;     // reference Patient.id
-    private Long doctorId;      // reference Doctor.id
-    private Long appointmentId; // reference Appointment.id
+    private Long patientId;
+    private Long doctorId;
+    private Long appointmentId;
 
     private Instant createdAt = Instant.now();
     private String notes;

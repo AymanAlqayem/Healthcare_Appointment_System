@@ -23,9 +23,6 @@ public class AdminController {
     private final AdminService adminService;
     private final DoctorService doctorService;
     private final PatientService patientService;
-    private final DoctorRepository doctorRepository;
-    private final UserRepository userRepository;
-
 
     @PostMapping("/create-admin")
     public ResponseEntity<AdminResponseDto> createAdmin(@Valid @RequestBody AdminDto dto) {
@@ -53,15 +50,6 @@ public class AdminController {
         return ResponseEntity.ok(updatedDoctor);
     }
 
-//    @PostMapping("/doctor/{doctorId}/add-slot")
-//    public ResponseEntity<SlotResponseDto> addSlot(
-//            @PathVariable Long doctorId,
-//            @Valid @RequestBody SlotCreateDto dto
-//    ) {
-//        SlotResponseDto response = adminService.addSlot(doctorId, dto);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//    }
-
     @PostMapping("/doctor/{doctorId}/add-slots")
     public ResponseEntity<List<SlotResponseDto>> addDaySlots(
             @PathVariable Long doctorId,
@@ -71,12 +59,10 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-
     @GetMapping("/doctors")
     public List<DoctorResponseDto> getDoctors() {
         return doctorService.getAllDoctors();
     }
-
 
     /**
      * Patient APIs
@@ -91,7 +77,6 @@ public class AdminController {
     public ResponseEntity<String> deletePatient(@PathVariable Long id) {
         return patientService.deletePatient(id);
     }
-
 
     @GetMapping("/patients")
     public List<PatientResponseDto> getPatients() {

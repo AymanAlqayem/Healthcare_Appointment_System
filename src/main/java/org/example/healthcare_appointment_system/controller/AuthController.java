@@ -11,7 +11,6 @@ import org.example.healthcare_appointment_system.security.JwtService;
 import org.example.healthcare_appointment_system.security.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -64,52 +63,39 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<Object> logout() {
         try {
-            // Try to get the currently logged-in user ID
             Long userId = SecurityUtils.getCurrentUserId();
 
-            // Stateless logout: client should discard tokens
-            return ResponseEntity.noContent().build(); // 204 No Content
-
+            return ResponseEntity.ok(Map.of("message", "Logout successful"));
         } catch (RuntimeException e) {
-            // User not authenticated
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "You are already not logged in"));
         }
     }
 
-
-
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@RequestBody @Valid RefreshRequest request) {
         String refreshToken = request.getRefreshToken();
 
-        // 1. Validate refresh token (signature, expiration, type)
         if (!jwtService.isRefreshTokenValid(refreshToken)) {
             throw new IllegalArgumentException("Invalid or expired refresh token");
         }
 
-        // 2. Extract username
         String username = jwtService.extractUsername(refreshToken);
 
-        // 3. Load user details for roles
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(auth -> auth.getAuthority().replace("ROLE_", ""))
                 .toList();
 
-        // 4. Generate new tokens
         String newAccessToken = jwtService.generateAccessToken(username, roles);
         String newRefreshToken = jwtService.generateRefreshToken(username);
 
-        // 5. Return response
         return ResponseEntity.ok(new AuthResponse(
                 newAccessToken,
                 jwtService.getExpirationMs(),
                 newRefreshToken
         ));
     }
-
-
 }

@@ -8,10 +8,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public record SlotCreateDto(
-//        @NotNull(message = "Date is required")
-//        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-//        LocalDate date,
-
         @NotNull(message = "day is required")
         WeekDay dayOfWeek,
 
@@ -22,4 +18,5 @@ public record SlotCreateDto(
         @NotNull(message = "End time is required")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
         LocalTime endTime
-) { }
+) {
+}

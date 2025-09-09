@@ -3,7 +3,6 @@ package org.example.healthcare_appointment_system.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.*;
-import org.example.healthcare_appointment_system.entity.Appointment;
 import org.example.healthcare_appointment_system.service.AppointmentService;
 import org.example.healthcare_appointment_system.service.DoctorService;
 import org.example.healthcare_appointment_system.service.PatientService;
@@ -45,14 +44,13 @@ public class PatientController {
 
     @GetMapping("/appointments")
     public ResponseEntity<List<AppointmentResponseDto>> getMyAppointments() {
-        // No need for @RequestParam - automatically gets current patient's appointments
         List<AppointmentResponseDto> appointments = patientService.getMyAppointments();
         return ResponseEntity.ok(appointments);
     }
 
     @PutMapping("/cancel-appointment/{appointmentId}")
-    public ResponseEntity<AppointmentResponseDto> cancelAppointment(@PathVariable Long id) {
-        AppointmentResponseDto response = patientService.cancelAppointment(id);
+    public ResponseEntity<AppointmentResponseDto> cancelAppointment(@PathVariable Long appointmentId) {
+        AppointmentResponseDto response = patientService.cancelAppointment(appointmentId);
         return ResponseEntity.ok(response);
     }
 

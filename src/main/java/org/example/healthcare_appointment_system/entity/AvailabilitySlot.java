@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.example.healthcare_appointment_system.enums.WeekDay;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
@@ -29,11 +28,8 @@ public class AvailabilitySlot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-//    private LocalDate date;
-
     @Enumerated(EnumType.STRING)
-    private WeekDay dayOfWeek;   // Instead of a specific date
+    private WeekDay dayOfWeek;
 
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
@@ -42,9 +38,8 @@ public class AvailabilitySlot {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime endTime;
 
-    private boolean reserved = false; // true if a patient has booked it
+    private boolean reserved = false;
 
-    // Relations
     @ManyToOne
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;

@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import org.example.healthcare_appointment_system.enums.Role;
 
 public record AdminDto(
         @NotBlank
@@ -22,5 +21,6 @@ public record AdminDto(
         @NotBlank
         @Email
         String email
-) {}
+) {
+}
 

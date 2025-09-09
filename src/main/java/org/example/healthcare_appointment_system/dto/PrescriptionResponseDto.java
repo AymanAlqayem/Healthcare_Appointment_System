@@ -10,4 +10,5 @@ public record PrescriptionResponseDto(
         String createdAt,
         String notes,
         List<String> medicines
-) {}
+) {
+}

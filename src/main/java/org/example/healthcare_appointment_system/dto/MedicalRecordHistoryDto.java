@@ -5,7 +5,6 @@ import java.util.Map;
 
 public record MedicalRecordHistoryDto(
         String createdAt,
-        String notes,
-        List<String> attachments,
-        Map<String, String> labResults
-) {}
+        String notes
+        ) {
+}

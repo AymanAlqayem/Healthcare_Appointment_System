@@ -8,6 +8,10 @@ import org.example.healthcare_appointment_system.enums.WeekDay;
 import java.util.List;
 
 public record DaySlotsCreateDto(
-        @NotNull WeekDay dayOfWeek,
-        @NotEmpty List<@Valid TimeRangeDto> slots
-) {}
+        @NotNull(message = "day can not be null")
+        WeekDay dayOfWeek,
+
+        @NotEmpty(message = "Slots are required")
+        List<@Valid TimeRangeDto> slots
+) {
+}

@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthcare_appointment_system.dto.*;
 import org.example.healthcare_appointment_system.service.*;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,12 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('DOCTOR')")
 public class DoctorController {
-    private final DoctorService doctorService;
     private final AppointmentService appointmentService;
     private final PatientService patientService;
     private final PrescriptionService prescriptionService;
     private final MedicalRecordService medicalRecordService;
-
 
     @GetMapping("/appointments")
     public ResponseEntity<List<AppointmentResponseDto>> getMyAppointments() {
@@ -38,7 +35,6 @@ public class DoctorController {
 
     @PutMapping("/appointments/{appointmentId}/complete")
     public ResponseEntity<AppointmentResponseDto> completeAppointment(@PathVariable Long appointmentId) {
-        // No need to pass doctorId - it's automatically retrieved from security context
         AppointmentResponseDto updated = appointmentService.markAppointmentCompleted(appointmentId);
         return ResponseEntity.ok(updated);
     }

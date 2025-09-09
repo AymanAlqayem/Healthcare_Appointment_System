@@ -7,4 +7,5 @@ public record PatientMedicalHistoryDto(
         String patientName,
         List<PrescriptionHistoryDto> prescriptions,
         List<MedicalRecordHistoryDto> medicalRecords
-) {}
+) {
+}

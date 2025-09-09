@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.healthcare_appointment_system.enums.Role;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Entity
 @Table(name = "users")
 @Getter

@@ -9,7 +9,6 @@ import org.example.healthcare_appointment_system.entity.AvailabilitySlot;
 import org.example.healthcare_appointment_system.entity.Patient;
 import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.AppointmentStatus;
-import org.example.healthcare_appointment_system.enums.Gender;
 import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.repo.*;
 import org.example.healthcare_appointment_system.security.SecurityUtils;
@@ -64,12 +63,11 @@ public class PatientService {
 
         Patient savedPatient = patientRepository.save(patient);
 
-        // Convert to response DTO
         return new PatientResponseDto(
                 savedPatient.getId(),
                 savedPatient.getUser().getUsername(),
                 savedPatient.getUser().getEmail(),
-                savedPatient.getGender().name(),  // convert enum to String
+                savedPatient.getGender().name(),
                 savedPatient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
         );
     }
@@ -78,18 +76,14 @@ public class PatientService {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
 
-        //Also delete the associated User if desired
         User user = patient.getUser();
 
-        // Delete doctor entity
         patientRepository.delete(patient);
 
-        // Delete the associated user
         if (user != null) {
             userRepository.delete(user);
         }
         return ResponseEntity.ok("Patient deleted successfully");
-
     }
 
     public List<PatientResponseDto> getAllPatients() {
@@ -99,24 +93,21 @@ public class PatientService {
                         patient.getId(),
                         patient.getUser().getUsername(),
                         patient.getUser().getEmail(),
-                        patient.getGender().name(), // convert enum to string
+                        patient.getGender().name(),
                         patient.getDateOfBirth().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
                 ))
                 .toList();
     }
 
     public PatientResponseDto updateInfo(PatientUpdateDto dto) {
-        // Get the currently logged-in user's ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Find the patient associated with this user ID
         Patient patient = patientRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
 
-        // Update fields - no need to find by ID since we already have the patient
         patient.getUser().setPhone(dto.phone());
         patient.getUser().setEmail(dto.email());
-        patient.setGender(dto.gender());  // Convert string to enum if needed
+        patient.setGender(dto.gender());
         patient.setDateOfBirth(dto.dateOfBirth());
 
         Patient savedPatient = patientRepository.save(patient);
@@ -131,14 +122,11 @@ public class PatientService {
     }
 
     public List<AppointmentResponseDto> getMyAppointments() {
-        // 1. Get the currently logged-in user's ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // 2. Find the patient associated with this user ID
         Patient patient = patientRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new RuntimeException("Patient not found for current user"));
 
-        // 3. Get appointments for this specific patient
         return appointmentRepository.findByPatientId(patient.getId())
                 .stream()
                 .map(app -> {
@@ -163,7 +151,6 @@ public class PatientService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        // Update status
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
 
@@ -173,7 +160,7 @@ public class PatientService {
                 appointment.getId(),
                 appointment.getDoctor().getUser().getUsername(),
                 appointment.getPatient().getUser().getUsername(),
-                slot.getDayOfWeek().name(),  // use day of week instead of date
+                slot.getDayOfWeek().name(),
                 slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 appointment.getStatus().name()
@@ -199,10 +186,8 @@ public class PatientService {
     }
 
     public PatientMedicalHistoryDto getPatientHistory() {
-        // Get logged-in user ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
 
-        // Find patient profile linked to this user
         Patient patient = patientRepository.findAll().stream()
                 .filter(p -> p.getUser().getId().equals(currentUserId))
                 .findFirst()
@@ -211,10 +196,8 @@ public class PatientService {
         Long patientId = patient.getId();
         String patientName = patient.getUser().getUsername();
 
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-        // Fetch prescriptions
         List<PrescriptionHistoryDto> prescriptions = prescriptionRepository.findByPatientId(patientId)
                 .stream()
                 .map(p -> {
@@ -233,22 +216,17 @@ public class PatientService {
                 })
                 .toList();
 
-        // Fetch medical records
         List<MedicalRecordHistoryDto> medicalRecords = medicalRecordRepository.findByPatientId(patientId)
                 .stream()
                 .map(r -> new MedicalRecordHistoryDto(
                         DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
                                 .withZone(ZoneId.systemDefault())
                                 .format(r.getCreatedAt()),
-                        r.getNotes(),
-                        r.getAttachments(),
-                        r.getLabResults()
+                        r.getNotes()
                 ))
                 .toList();
 
         return new PatientMedicalHistoryDto(patientId, patientName, prescriptions, medicalRecords);
     }
-
-
 }
 
