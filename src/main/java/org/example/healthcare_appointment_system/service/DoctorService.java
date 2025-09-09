@@ -2,6 +2,7 @@ package org.example.healthcare_appointment_system.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.healthcare_appointment_system.cacheTest.CacheService;
 import org.example.healthcare_appointment_system.dto.*;
 import org.example.healthcare_appointment_system.entity.AvailabilitySlot;
 import org.example.healthcare_appointment_system.entity.Doctor;
@@ -25,6 +26,7 @@ public class DoctorService {
     private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CacheService cacheService;
 
     @Transactional
     public DoctorResponseDto createDoctor(DoctorDto dto) {
@@ -76,11 +78,15 @@ public class DoctorService {
 
         Doctor savedDoctor = doctorRepository.save(doctor);
 
+        // Clear relevant caches after creating a new doctor
+        cacheService.evictAllDoctorsCache();
+        cacheService.evictDoctorBySpecialtyCache(savedDoctor.getSpecialty());
+
         List<AvailabilitySlotResponseDto> slots = savedDoctor.getAvailabilitySlots().stream()
                 .map(slot -> new AvailabilitySlotResponseDto(
                         slot.getId(),
-                        slot.getDayOfWeek().name(), // instead of date
-                        slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        slot.getDayOfWeek().name(),
+                            slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         slot.isReserved()
                 ))
@@ -97,8 +103,9 @@ public class DoctorService {
     }
 
     public List<DoctorResponseDto> getAllDoctors() {
-        return doctorRepository.findAll()
-                .stream()
+        List<Doctor> doctors = doctorRepository.findAll();
+
+        return doctors.stream()
                 .map(doctor -> {
                     List<AvailabilitySlotResponseDto> slots = doctor.getAvailabilitySlots()
                             .stream()
@@ -124,15 +131,22 @@ public class DoctorService {
     }
 
     public ResponseEntity<String> deleteDoctor(Long id) {
-        Doctor doctor = doctorRepository.findById(id).orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + id));
 
         User user = doctor.getUser();
+
+        // Clear caches before deletion
+        cacheService.evictDoctorCache(id);
+        cacheService.evictDoctorBySpecialtyCache(doctor.getSpecialty());
+        cacheService.evictAllDoctorsCache();
 
         doctorRepository.delete(doctor);
 
         if (user != null) {
             userRepository.delete(user);
         }
+
         return ResponseEntity.ok("Doctor deleted successfully");
     }
 
@@ -140,6 +154,8 @@ public class DoctorService {
     public DoctorResponseDto updateDoctor(DoctorUpdateDto dto) {
         Doctor doctor = doctorRepository.findById(dto.id())
                 .orElseThrow(() -> new RuntimeException("Doctor not found with id: " + dto.id()));
+
+        String oldSpecialty = doctor.getSpecialty();
 
         // Update User info
         User user = doctor.getUser();
@@ -152,13 +168,23 @@ public class DoctorService {
 
         // Update Doctor-specific info
         doctor.setSpecialty(dto.specialty());
-        doctorRepository.save(doctor);
+        Doctor updatedDoctor = doctorRepository.save(doctor);
 
-        List<AvailabilitySlotResponseDto> slots = doctor.getAvailabilitySlots()
+        // Clear relevant caches after update
+        cacheService.evictDoctorCache(doctor.getId());
+        cacheService.evictAllDoctorsCache();
+
+        // If specialty changed, clear both old and new specialty caches
+        if (!oldSpecialty.equals(dto.specialty())) {
+            cacheService.evictDoctorBySpecialtyCache(oldSpecialty);
+        }
+        cacheService.evictDoctorBySpecialtyCache(dto.specialty());
+
+        List<AvailabilitySlotResponseDto> slots = updatedDoctor.getAvailabilitySlots()
                 .stream()
                 .map(slot -> new AvailabilitySlotResponseDto(
                         slot.getId(),
-                        slot.getDayOfWeek().name(), // now return day of week
+                        slot.getDayOfWeek().name(),
                         slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         slot.isReserved()
@@ -166,11 +192,11 @@ public class DoctorService {
                 .toList();
 
         return new DoctorResponseDto(
-                doctor.getId(),
+                updatedDoctor.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getPhone(),
-                doctor.getSpecialty(),
+                updatedDoctor.getSpecialty(),
                 slots
         );
     }
@@ -188,7 +214,7 @@ public class DoctorService {
                             .stream()
                             .map(slot -> new AvailabilitySlotResponseDto(
                                     slot.getId(),
-                                    slot.getDayOfWeek().name(), // use weekly day instead of date
+                                    slot.getDayOfWeek().name(),
                                     slot.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                                     slot.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                                     slot.isReserved()
@@ -207,6 +233,3 @@ public class DoctorService {
                 .toList();
     }
 }
-
-
-
