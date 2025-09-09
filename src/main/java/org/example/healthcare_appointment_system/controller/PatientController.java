@@ -56,5 +56,9 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
-
+    @GetMapping("medical-history")
+    public ResponseEntity<PatientMedicalHistoryDto> getMyMedicalHistory() {
+        PatientMedicalHistoryDto response = patientService.getPatientHistory();
+        return ResponseEntity.ok(response);
+    }
 }

@@ -13,7 +13,6 @@ import java.util.Map;
 @Getter
 @Setter
 public class MedicalRecord {
-
     @Id
     private String id;
 
@@ -24,6 +23,17 @@ public class MedicalRecord {
     private String notes;
     private List<String> attachments; // e.g., URLs or file paths
     private Map<String, String> labResults;
+
+//    @Id
+//    private String id;
+//
+//    private Long patientId;  // reference Patient.id
+//    private Long doctorId;
+//
+//    private Instant createdAt = Instant.now();
+//    private String notes;
+//    private List<String> attachments; // e.g., URLs or file paths
+//    private Map<String, String> labResults;
 
 }
 

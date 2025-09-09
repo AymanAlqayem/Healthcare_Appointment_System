@@ -11,14 +11,13 @@ import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.AppointmentStatus;
 import org.example.healthcare_appointment_system.enums.Gender;
 import org.example.healthcare_appointment_system.enums.Role;
-import org.example.healthcare_appointment_system.repo.AppointmentRepository;
-import org.example.healthcare_appointment_system.repo.PatientRepository;
-import org.example.healthcare_appointment_system.repo.UserRepository;
+import org.example.healthcare_appointment_system.repo.*;
 import org.example.healthcare_appointment_system.security.SecurityUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -29,6 +28,8 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final PasswordEncoder passwordEncoder;
     private final AppointmentRepository appointmentRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
 
     @Transactional
     public PatientResponseDto createPatient(PatientDto dto) {
@@ -195,6 +196,57 @@ public class PatientService {
         );
 
         return ResponseEntity.ok(dto);
+    }
+
+    public PatientMedicalHistoryDto getPatientHistory() {
+        // Get logged-in user ID
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+
+        // Find patient profile linked to this user
+        Patient patient = patientRepository.findAll().stream()
+                .filter(p -> p.getUser().getId().equals(currentUserId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Patient profile not found for user ID: " + currentUserId));
+
+        Long patientId = patient.getId();
+        String patientName = patient.getUser().getUsername();
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        // Fetch prescriptions
+        List<PrescriptionHistoryDto> prescriptions = prescriptionRepository.findByPatientId(patientId)
+                .stream()
+                .map(p -> {
+                    Appointment appointment = appointmentRepository.findById(p.getAppointmentId())
+                            .orElseThrow(() -> new RuntimeException("Appointment not found: " + p.getAppointmentId()));
+
+                    String day = appointment.getSlot().getDayOfWeek().name();
+                    String time = appointment.getSlot().getStartTime().format(timeFormatter) +
+                            " - " + appointment.getSlot().getEndTime().format(timeFormatter);
+
+                    String createdAt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
+                            .withZone(ZoneId.systemDefault())
+                            .format(p.getCreatedAt());
+
+                    return new PrescriptionHistoryDto(day, time, createdAt, p.getNotes(), p.getMedicines());
+                })
+                .toList();
+
+        // Fetch medical records
+        List<MedicalRecordHistoryDto> medicalRecords = medicalRecordRepository.findByPatientId(patientId)
+                .stream()
+                .map(r -> new MedicalRecordHistoryDto(
+                        DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
+                                .withZone(ZoneId.systemDefault())
+                                .format(r.getCreatedAt()),
+                        r.getNotes(),
+                        r.getAttachments(),
+                        r.getLabResults()
+                ))
+                .toList();
+
+        return new PatientMedicalHistoryDto(patientId, patientName, prescriptions, medicalRecords);
     }
 
 
