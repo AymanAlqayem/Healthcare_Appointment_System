@@ -1,4 +1,4 @@
-# 🏥 Smart Healthcare Appointment System
+#  Smart Healthcare Appointment System
 
 A **Spring Boot 3** application designed to streamline healthcare management processes.  
 This system enables hospitals to efficiently manage **patients, doctors, appointments, prescriptions, and medical records** with robust security and modern architectural patterns.
@@ -6,14 +6,14 @@ This system enables hospitals to efficiently manage **patients, doctors, appoint
 ---
 
 ## 🚀 Key Features
-- 🔐 **Role-Based Access Control** – Admin, Doctor, and Patient roles  
-- 👨‍⚕️ **Doctor Management** – Add, update, and remove doctors with specialty-based search  
-- 🧑‍🤝‍🧑 **Patient Management** – Registration and profile updates  
-- 📅 **Appointment System** – Booking, cancellation, completion with double-booking prevention  
-- 📑 **Medical Records** – Prescriptions and history stored in **MongoDB**  
-- 📝 **Comprehensive Logging** – Using Spring AOP for critical operations  
-- ⚡ **Caching** – Frequently accessed doctor data (Ehcache, Hibernate 1st/2nd level cache)  
-- 🌐 **RESTful APIs** – With validation and error handling  
+-  **Role-Based Access Control** – Admin, Doctor, and Patient roles  
+-  **Doctor Management** – Add, update, and remove doctors with specialty-based search  
+-  **Patient Management** – Registration and profile updates  
+-  **Appointment System** – Booking, cancellation, completion with double-booking prevention  
+-  **Medical Records** – Prescriptions and history stored in **MongoDB**  
+-  **Comprehensive Logging** – Using Spring AOP for critical operations  
+-  **Caching** – Frequently accessed doctor data (Ehcache, Hibernate 1st/2nd level cache)  
+-  **RESTful APIs** – With validation and error handling  
 
 ---
 
@@ -34,11 +34,11 @@ This system enables hospitals to efficiently manage **patients, doctors, appoint
 ## ⚙️ Installation & Setup
 
 ### Prerequisites
-- ☕ Java 17+  
-- 📦 Maven 3.6+  
-- 🗄 MySQL/PostgreSQL  
-- 🍃 MongoDB  
-- 🔗 Git  
+- Java 17+  
+- Maven 3.6+  
+- MySQL/PostgreSQL  
+- MongoDB  
+- Git  
 
 ### Steps
 ```bash
