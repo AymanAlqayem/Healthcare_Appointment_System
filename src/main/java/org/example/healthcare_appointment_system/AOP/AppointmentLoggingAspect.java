@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class AppointmentLoggingAspect {
-
     // After booking an appointment successfully
     @AfterReturning(
             pointcut = "execution(* org.example.healthcare_appointment_system.service.AppointmentService.bookAppointment(..))",

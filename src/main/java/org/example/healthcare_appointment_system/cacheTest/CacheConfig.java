@@ -6,5 +6,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableCaching
 public class CacheConfig {
-    // Cache configuration is handled by application.yml and ehcache.xml
+    /**
+     * Cache configuration is handled
+     * by application.yml and ehcache.xml
+     * */
 }
