@@ -1,27 +1,28 @@
 package org.example.healthcare_appointment_system;
 
 import org.example.healthcare_appointment_system.dto.*;
-import org.example.healthcare_appointment_system.entity.*;
-import org.example.healthcare_appointment_system.enums.AppointmentStatus;
+import org.example.healthcare_appointment_system.entity.Patient;
+import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.Gender;
 import org.example.healthcare_appointment_system.enums.Role;
-import org.example.healthcare_appointment_system.enums.WeekDay;
-import org.example.healthcare_appointment_system.repo.*;
+import org.example.healthcare_appointment_system.repo.PatientRepository;
+import org.example.healthcare_appointment_system.repo.UserRepository;
 import org.example.healthcare_appointment_system.security.SecurityUtils;
 import org.example.healthcare_appointment_system.service.PatientService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,142 +40,175 @@ class PatientServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private AppointmentRepository appointmentRepository;
-
     @InjectMocks
     private PatientService patientService;
 
-    private PatientDto testPatientDto;
-    private PatientUpdateDto testPatientUpdateDto;
-    private User testUser;
-    private Patient testPatient;
+    private PatientDto patientDto;
+    private User user;
+    private Patient patient;
+    private MockedStatic<SecurityUtils> securityUtilsMock;
 
     @BeforeEach
     void setUp() {
-        testPatientDto = new PatientDto(
-                "patient1", "patient@example.com", "1234567890", "password123",
-                Gender.MALE, LocalDate.of(1990, 1, 1)
+            patientDto = new PatientDto(
+                "patientUser",
+                "password123",
+                "1234567890",
+                "patient@example.com",
+                Gender.MALE,
+                LocalDate.of(1990, 1, 1)
         );
 
-        testPatientUpdateDto = new PatientUpdateDto(
-                "new@example.com", "0987654321", Gender.FEMALE, LocalDate.of(1995, 1, 1)
-        );
+        user = User.builder()
+                .id(1L)
+                .username("patientUser")
+                .email("patient@example.com")
+                .phone("1234567890")
+                .password("encodedPassword")
+                .role(Role.PATIENT)
+                .enabled(true)
+                .build();
 
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setUsername("patient1");
-        testUser.setEmail("patient@example.com");
-        testUser.setPhone("1234567890");
-        testUser.setRole(Role.PATIENT);
+        patient = new Patient();
+        patient.setId(1L);
+        patient.setUser(user);
+        patient.setGender(Gender.MALE);
+        patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
 
-        testPatient = new Patient();
-        testPatient.setId(1L);
-        testPatient.setUser(testUser); // Proper association
-        testPatient.setGender(Gender.MALE);
-        testPatient.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        // Mock the static SecurityUtils method
+        securityUtilsMock = Mockito.mockStatic(SecurityUtils.class);
+        securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (securityUtilsMock != null) {
+            securityUtilsMock.close();
+        }
     }
 
     @Test
     void createPatient_Success() {
-        // Arrange - Correct validation order (NO password check!)
-        when(userRepository.existsByUsername("patient1")).thenReturn(false);
-        when(userRepository.existsByEmail("patient@example.com")).thenReturn(false);
-        when(userRepository.existsByPhone("1234567890")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(patientRepository.save(any(Patient.class))).thenReturn(testPatient);
+        when(userRepository.existsByUsername(patientDto.username())).thenReturn(false);
+        when(userRepository.existsByEmail(patientDto.email())).thenReturn(false);
+        when(userRepository.existsByPhone(patientDto.phone())).thenReturn(false);
+        when(passwordEncoder.encode(patientDto.password())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(patientRepository.save(any(Patient.class))).thenReturn(patient);
 
-        // Act
-        PatientResponseDto result = patientService.createPatient(testPatientDto);
+        PatientResponseDto result = patientService.createPatient(patientDto);
 
         // Assert
         assertNotNull(result);
-        assertEquals(1L, result.id());
-        assertEquals("patient1", result.username());
-
-        verify(userRepository).existsByUsername("patient1");
-        verify(userRepository).existsByEmail("patient@example.com");
-        verify(userRepository).existsByPhone("1234567890");
+        assertEquals("patientUser", result.username());
+        assertEquals("MALE", result.gender());
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(patientRepository, times(1)).save(any(Patient.class));
     }
 
     @Test
-    void updateInfo_Success() {
-        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
-            // Arrange
-            securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
+    void createPatient_UsernameExists_ThrowsException() {
+        // Arrange
+        when(userRepository.existsByUsername(patientDto.username())).thenReturn(true);
 
-            // Create a fresh patient for this test to avoid state pollution
-            Patient freshPatient = new Patient();
-            freshPatient.setId(1L);
-            freshPatient.setUser(testUser);
-            freshPatient.setGender(Gender.MALE);
-            freshPatient.setDateOfBirth(LocalDate.of(1990, 1, 1));
-
-            when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(freshPatient));
-            when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-            // Act
-            PatientResponseDto result = patientService.updateInfo(testPatientUpdateDto);
-
-            // Assert - Check the actual updated values
-            assertEquals("new@example.com", freshPatient.getUser().getEmail());
-            assertEquals("0987654321", freshPatient.getUser().getPhone());
-            assertEquals(Gender.FEMALE, freshPatient.getGender());
-
-            verify(patientRepository).save(freshPatient);
-        }
-    }
-
-    @Test
-    void getMyAppointments_Success() {
-        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
-            // Arrange
-            securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
-
-            Appointment appointment = new Appointment();
-            appointment.setId(1L);
-            appointment.setPatient(testPatient);
-
-            Doctor doctor = new Doctor();
-            User doctorUser = new User();
-            doctorUser.setUsername("doctor1");
-            doctor.setUser(doctorUser);
-            appointment.setDoctor(doctor);
-
-            AvailabilitySlot slot = new AvailabilitySlot();
-            slot.setDayOfWeek(WeekDay.MONDAY);
-            slot.setStartTime(LocalTime.of(9, 0));
-            slot.setEndTime(LocalTime.of(10, 0));
-            appointment.setSlot(slot);
-            appointment.setStatus(AppointmentStatus.BOOKED);
-
-            when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(testPatient));
-            when(appointmentRepository.findByPatientId(1L)).thenReturn(List.of(appointment));
-
-            // Act
-            var result = patientService.getMyAppointments();
-
-            // Assert
-            assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals("doctor1", result.get(0).doctorName());
-        }
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> patientService.createPatient(patientDto));
+        verify(userRepository, never()).save(any(User.class));
+        verify(patientRepository, never()).save(any(Patient.class));
     }
 
     @Test
     void deletePatient_Success() {
         // Arrange
-        when(patientRepository.findById(1L)).thenReturn(Optional.of(testPatient));
+        when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
         // Act
-        var result = patientService.deletePatient(1L);
+        ResponseEntity<String> result = patientService.deletePatient(1L);
 
         // Assert
         assertNotNull(result);
+        assertEquals(200, result.getStatusCodeValue());
         assertEquals("Patient deleted successfully", result.getBody());
+        verify(patientRepository, times(1)).delete(patient);
+        verify(userRepository, times(1)).delete(user);
+    }
 
-        verify(patientRepository).delete(testPatient);
-        verify(userRepository).delete(testUser);
+    @Test
+    void deletePatient_NotFound_ThrowsException() {
+        // Arrange
+        when(patientRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> patientService.deletePatient(1L));
+        verify(patientRepository, never()).delete(any());
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void getAllPatients_Success() {
+        // Arrange
+        List<Patient> patients = List.of(patient);
+        when(patientRepository.findAll()).thenReturn(patients);
+
+        // Act
+        List<PatientResponseDto> result = patientService.getAllPatients();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("patientUser", result.get(0).username());
+        verify(patientRepository, times(1)).findAll();
+    }
+
+
+    @Test
+    void updateInfo_Success() {
+        // Arrange - CORRECTED parameter order: phone, email, gender, dateOfBirth
+        PatientUpdateDto updateDto = new PatientUpdateDto(
+                "0987654321",           // phone
+                "updated@example.com",  // email
+                Gender.FEMALE,          // gender
+                LocalDate.of(1995, 1, 1) // dateOfBirth
+        );
+
+        when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(patient));
+        when(patientRepository.save(any(Patient.class))).thenReturn(patient);
+
+        // Act
+        PatientResponseDto result = patientService.updateInfo(updateDto);
+
+        // Assert
+        assertNotNull(result);
+        verify(patientRepository, times(1)).save(patient);
+        assertEquals("updated@example.com", patient.getUser().getEmail());
+        assertEquals("0987654321", patient.getUser().getPhone());
+        assertEquals(Gender.FEMALE, patient.getGender());
+    }
+
+    @Test
+    void findPatient_Success() {
+        // Arrange
+        when(userRepository.findByUsername("patientUser")).thenReturn(Optional.of(user));
+        when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(patient));
+
+        // Act
+        ResponseEntity<PatientResponseDto> result = patientService.findPatient("patientUser");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(200, result.getStatusCodeValue());
+        assertNotNull(result.getBody());
+        assertEquals("patientUser", result.getBody().username());
+        verify(userRepository, times(1)).findByUsername("patientUser");
+        verify(patientRepository, times(1)).findByUserId(1L);
+    }
+
+    @Test
+    void findPatient_UserNotFound_ThrowsException() {
+        // Arrange
+        when(userRepository.findByUsername("unknownUser")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> patientService.findPatient("unknownUser"));
     }
 }

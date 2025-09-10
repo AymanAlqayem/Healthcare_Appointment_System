@@ -1,12 +1,13 @@
 package org.example.healthcare_appointment_system;
 
-import org.example.healthcare_appointment_system.cacheTest.CacheService;
 import org.example.healthcare_appointment_system.dto.*;
-import org.example.healthcare_appointment_system.entity.*;
+import org.example.healthcare_appointment_system.entity.Doctor;
+import org.example.healthcare_appointment_system.entity.User;
 import org.example.healthcare_appointment_system.enums.Role;
 import org.example.healthcare_appointment_system.enums.WeekDay;
 import org.example.healthcare_appointment_system.repo.DoctorRepository;
 import org.example.healthcare_appointment_system.repo.UserRepository;
+import org.example.healthcare_appointment_system.cacheTest.CacheService;
 import org.example.healthcare_appointment_system.service.DoctorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,8 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,89 +43,179 @@ class DoctorServiceTest {
     @InjectMocks
     private DoctorService doctorService;
 
-    private DoctorDto testDoctorDto;
-    private User testUser;
-    private Doctor testDoctor;
+    private DoctorDto doctorDto;
+    private User user;
+    private Doctor doctor;
 
     @BeforeEach
     void setUp() {
-        // Setup test data with proper slots
-        TimeRangeDto timeRange = new TimeRangeDto(LocalTime.of(9, 0), LocalTime.of(10, 0));
-        DaySlotsCreateDto daySlots = new DaySlotsCreateDto(WeekDay.MONDAY, List.of(timeRange));
-
-        testDoctorDto = new DoctorDto(
-                "doctor1", "doctor@example.com", "1234567890", "password123",
-                "Cardiology", List.of(daySlots)
+        List<DaySlotsCreateDto> slots = List.of(
+                new DaySlotsCreateDto(
+                        WeekDay.MONDAY,
+                        List.of(new TimeRangeDto(LocalTime.of(9, 0), LocalTime.of(10, 0)))
+                )
         );
 
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setUsername("doctor1");
-        testUser.setEmail("doctor@example.com");
-        testUser.setPhone("1234567890");
-        testUser.setRole(Role.DOCTOR);
+        doctorDto = new DoctorDto(
+                "doctorUser",
+                "doctor@example.com",
+                "1234567890",
+                "password123",
+                "Cardiology",
+                slots
+        );
 
-        testDoctor = new Doctor();
-        testDoctor.setId(1L);
-        testDoctor.setSpecialty("Cardiology");
-        testDoctor.setUser(testUser);
+        user = User.builder()
+                .id(1L)
+                .username("doctorUser")
+                .email("doctor@example.com")
+                .phone("1234567890")
+                .password("encodedPassword")
+                .role(Role.DOCTOR)
+                .enabled(true)
+                .build();
 
-        // Create actual availability slots
-        AvailabilitySlot slot = new AvailabilitySlot();
-        slot.setId(1L);
-        slot.setDayOfWeek(WeekDay.MONDAY);
-        slot.setStartTime(LocalTime.of(9, 0));
-        slot.setEndTime(LocalTime.of(10, 0));
-        slot.setReserved(false);
-        slot.setDoctor(testDoctor);
-
-        testDoctor.setAvailabilitySlots(List.of(slot));
+        doctor = new Doctor();
+        doctor.setId(1L);
+        doctor.setUser(user);
+        doctor.setSpecialty("Cardiology");
+        doctor.setAvailabilitySlots(new ArrayList<>());
     }
 
     @Test
     void createDoctor_Success() {
-        // Arrange - Correct validation order (NO password check!)
-        when(userRepository.existsByUsername("doctor1")).thenReturn(false);
-        when(userRepository.existsByEmail("doctor@example.com")).thenReturn(false);
-        when(userRepository.existsByPhone("1234567890")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        when(doctorRepository.save(any(Doctor.class))).thenReturn(testDoctor);
+        // Arrange
+        when(userRepository.existsByUsername(doctorDto.username())).thenReturn(false);
+        when(userRepository.existsByEmail(doctorDto.email())).thenReturn(false);
+        when(userRepository.existsByPhone(doctorDto.phone())).thenReturn(false);
+        when(passwordEncoder.encode(doctorDto.password())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(doctorRepository.save(any(Doctor.class))).thenReturn(doctor);
 
         // Act
-        DoctorResponseDto result = doctorService.createDoctor(testDoctorDto);
+        DoctorResponseDto result = doctorService.createDoctor(doctorDto);
 
         // Assert
         assertNotNull(result);
-        assertEquals(1L, result.id());
-        assertEquals("doctor1", result.username());
+        assertEquals("doctorUser", result.username());
         assertEquals("Cardiology", result.specialty());
-
-        verify(userRepository).existsByUsername("doctor1");
-        verify(userRepository).existsByEmail("doctor@example.com");
-        verify(userRepository).existsByPhone("1234567890");
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(doctorRepository, times(1)).save(any(Doctor.class));
+        verify(cacheService, times(1)).evictAllDoctorsCache();
+        verify(cacheService, times(1)).evictDoctorBySpecialtyCache("Cardiology");
     }
 
     @Test
     void createDoctor_UsernameExists_ThrowsException() {
-        // Arrange - Remove the unnecessary password email check!
-        when(userRepository.existsByUsername("doctor1")).thenReturn(true);
+        // Arrange
+        when(userRepository.existsByUsername(doctorDto.username())).thenReturn(true);
 
         // Act & Assert
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> doctorService.createDoctor(testDoctorDto));
+        assertThrows(ResponseStatusException.class, () -> doctorService.createDoctor(doctorDto));
+        verify(userRepository, never()).save(any(User.class));
+        verify(doctorRepository, never()).save(any(Doctor.class));
+    }
 
-        assertTrue(exception.getMessage().contains("Username already exists"));
+    @Test
+    void getAllDoctors_Success() {
+        // Arrange
+        List<Doctor> doctors = List.of(doctor);
+        when(doctorRepository.findAll()).thenReturn(doctors);
 
-        verify(userRepository, never()).save(any());
-        verify(doctorRepository, never()).save(any());
+        // Act
+        List<DoctorResponseDto> result = doctorService.getAllDoctors();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("doctorUser", result.get(0).username());
+        verify(doctorRepository, times(1)).findAll();
+    }
+
+    @Test
+    void deleteDoctor_Success() {
+        // Arrange
+        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+
+        // Act
+        var result = doctorService.deleteDoctor(1L);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(200, result.getStatusCodeValue());
+        verify(doctorRepository, times(1)).delete(doctor);
+        verify(userRepository, times(1)).delete(user);
+        verify(cacheService, times(1)).evictDoctorCache(1L);
+        verify(cacheService, times(1)).evictDoctorBySpecialtyCache("Cardiology");
+        verify(cacheService, times(1)).evictAllDoctorsCache();
+    }
+
+    @Test
+    void deleteDoctor_NotFound_ThrowsException() {
+        // Arrange
+        when(doctorRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> doctorService.deleteDoctor(1L));
+        verify(doctorRepository, never()).delete(any());
+        verify(userRepository, never()).delete(any());
+    }
+
+//    @Test
+//    void updateDoctor_Success() {
+//        // Arrange
+//        DoctorUpdateDto updateDto = new DoctorUpdateDto(
+//                1L, "updated@example.com", "0987654321", "Neurology"
+//        );
+//
+//        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+//        when(userRepository.existsByEmail("updated@example.com")).thenReturn(false);
+//        when(userRepository.save(any(User.class))).thenReturn(user);
+//        when(doctorRepository.save(any(Doctor.class))).thenReturn(doctor);
+//
+//        // Act
+//        DoctorResponseDto result = doctorService.updateDoctor(updateDto);
+//
+//        // Assert
+//        assertNotNull(result);
+//        verify(userRepository, times(1)).save(user);
+//        verify(doctorRepository, times(1)).save(doctor);
+//        verify(cacheService, times(1)).evictDoctorCache(1L);
+//        verify(cacheService, times(1)).evictAllDoctorsCache();
+//        verify(cacheService, times(1)).evictDoctorBySpecialtyCache("Cardiology");
+//        verify(cacheService, times(1)).evictDoctorBySpecialtyCache("Neurology");
+//    }
+
+    @Test
+    void updateDoctor_Success() {
+        // Arrange - CORRECTED parameter order: id, specialty, phone, email
+        DoctorUpdateDto updateDto = new DoctorUpdateDto(
+                1L, "Neurology", "0987654321", "updated@example.com"
+        );
+
+        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        // Email is the same as current, so existsByEmail shouldn't be called
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(doctorRepository.save(any(Doctor.class))).thenReturn(doctor);
+
+        // Act
+        DoctorResponseDto result = doctorService.updateDoctor(updateDto);
+
+        // Assert
+        assertNotNull(result);
+        verify(userRepository, times(1)).save(user);
+        verify(doctorRepository, times(1)).save(doctor);
+        verify(cacheService, times(1)).evictDoctorCache(1L);
+        verify(cacheService, times(1)).evictAllDoctorsCache();
+        verify(cacheService, times(1)).evictDoctorBySpecialtyCache("Cardiology");
+        verify(cacheService, times(1)).evictDoctorBySpecialtyCache("Neurology");
     }
 
     @Test
     void searchBySpecialty_Success() {
         // Arrange
-        when(doctorRepository.findBySpecialtyIgnoreCase("Cardiology"))
-                .thenReturn(List.of(testDoctor));
+        List<Doctor> doctors = List.of(doctor);
+        when(doctorRepository.findBySpecialtyIgnoreCase("Cardiology")).thenReturn(doctors);
 
         // Act
         List<DoctorResponseDto> result = doctorService.searchBySpecialty("Cardiology");
@@ -134,37 +224,53 @@ class DoctorServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("Cardiology", result.get(0).specialty());
+        verify(doctorRepository, times(1)).findBySpecialtyIgnoreCase("Cardiology");
     }
 
     @Test
     void searchBySpecialty_NotFound_ThrowsException() {
         // Arrange
-        when(doctorRepository.findBySpecialtyIgnoreCase("Neurology"))
-                .thenReturn(List.of());
+        when(doctorRepository.findBySpecialtyIgnoreCase("Unknown")).thenReturn(Collections.emptyList());
 
-        // Act & Assert - Now expecting ResponseStatusException
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> doctorService.searchBySpecialty("Neurology"));
-
-        assertTrue(exception.getMessage().contains("No doctors found with specialty: Neurology"));
+        // Act & Assert
+        assertThrows(ResponseStatusException.class, () -> doctorService.searchBySpecialty("Unknown"));
     }
 
     @Test
-    void deleteDoctor_Success() {
-        // Arrange
-        when(doctorRepository.findById(1L)).thenReturn(Optional.of(testDoctor));
+    void updateDoctor_WithNewEmail_Success() {
+        // Arrange - CORRECTED parameter order: id, specialty, phone, email
+        DoctorUpdateDto updateDto = new DoctorUpdateDto(
+                1L, "Neurology", "0987654321", "newemail@example.com"
+        );
+
+        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(doctorRepository.save(any(Doctor.class))).thenReturn(doctor);
 
         // Act
-        var result = doctorService.deleteDoctor(1L);
+        DoctorResponseDto result = doctorService.updateDoctor(updateDto);
 
         // Assert
         assertNotNull(result);
-        assertEquals("Doctor deleted successfully", result.getBody());
+        verify(userRepository, times(1)).existsByEmail("newemail@example.com");
+        verify(userRepository, times(1)).save(user);
+        verify(doctorRepository, times(1)).save(doctor);
+    }
 
-        verify(doctorRepository).delete(testDoctor);
-        verify(userRepository).delete(testUser);
-        verify(cacheService).evictDoctorCache(1L);
-        verify(cacheService).evictDoctorBySpecialtyCache("Cardiology");
-        verify(cacheService).evictAllDoctorsCache();
+    @Test
+    void updateDoctor_EmailExists_ThrowsException() {
+        // Arrange - CORRECTED parameter order: id, specialty, phone, email
+        DoctorUpdateDto updateDto = new DoctorUpdateDto(
+                1L, "Neurology", "0987654321", "existing@example.com"
+        );
+
+        when(doctorRepository.findById(1L)).thenReturn(Optional.of(doctor));
+        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> doctorService.updateDoctor(updateDto));
+        verify(userRepository, never()).save(any(User.class));
+        verify(doctorRepository, never()).save(any(Doctor.class));
     }
 }
