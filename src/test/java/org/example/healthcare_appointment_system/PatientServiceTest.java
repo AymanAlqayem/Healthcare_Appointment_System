@@ -50,7 +50,7 @@ class PatientServiceTest {
 
     @BeforeEach
     void setUp() {
-            patientDto = new PatientDto(
+        patientDto = new PatientDto(
                 "patientUser",
                 "password123",
                 "1234567890",
@@ -75,7 +75,6 @@ class PatientServiceTest {
         patient.setGender(Gender.MALE);
         patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
 
-        // Mock the static SecurityUtils method
         securityUtilsMock = Mockito.mockStatic(SecurityUtils.class);
         securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
     }
@@ -98,7 +97,6 @@ class PatientServiceTest {
 
         PatientResponseDto result = patientService.createPatient(patientDto);
 
-        // Assert
         assertNotNull(result);
         assertEquals("patientUser", result.username());
         assertEquals("MALE", result.gender());
@@ -108,10 +106,8 @@ class PatientServiceTest {
 
     @Test
     void createPatient_UsernameExists_ThrowsException() {
-        // Arrange
         when(userRepository.existsByUsername(patientDto.username())).thenReturn(true);
 
-        // Act & Assert
         assertThrows(RuntimeException.class, () -> patientService.createPatient(patientDto));
         verify(userRepository, never()).save(any(User.class));
         verify(patientRepository, never()).save(any(Patient.class));
@@ -119,13 +115,10 @@ class PatientServiceTest {
 
     @Test
     void deletePatient_Success() {
-        // Arrange
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
-        // Act
         ResponseEntity<String> result = patientService.deletePatient(1L);
 
-        // Assert
         assertNotNull(result);
         assertEquals(200, result.getStatusCodeValue());
         assertEquals("Patient deleted successfully", result.getBody());
@@ -135,10 +128,8 @@ class PatientServiceTest {
 
     @Test
     void deletePatient_NotFound_ThrowsException() {
-        // Arrange
         when(patientRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(RuntimeException.class, () -> patientService.deletePatient(1L));
         verify(patientRepository, never()).delete(any());
         verify(userRepository, never()).delete(any());
@@ -146,14 +137,11 @@ class PatientServiceTest {
 
     @Test
     void getAllPatients_Success() {
-        // Arrange
         List<Patient> patients = List.of(patient);
         when(patientRepository.findAll()).thenReturn(patients);
 
-        // Act
         List<PatientResponseDto> result = patientService.getAllPatients();
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("patientUser", result.get(0).username());
@@ -163,21 +151,18 @@ class PatientServiceTest {
 
     @Test
     void updateInfo_Success() {
-        // Arrange - CORRECTED parameter order: phone, email, gender, dateOfBirth
         PatientUpdateDto updateDto = new PatientUpdateDto(
-                "0987654321",           // phone
-                "updated@example.com",  // email
-                Gender.FEMALE,          // gender
-                LocalDate.of(1995, 1, 1) // dateOfBirth
+                "0987654321",
+                "updated@example.com",
+                Gender.FEMALE,
+                LocalDate.of(1995, 1, 1)
         );
 
         when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(patient));
         when(patientRepository.save(any(Patient.class))).thenReturn(patient);
 
-        // Act
         PatientResponseDto result = patientService.updateInfo(updateDto);
 
-        // Assert
         assertNotNull(result);
         verify(patientRepository, times(1)).save(patient);
         assertEquals("updated@example.com", patient.getUser().getEmail());
@@ -187,14 +172,11 @@ class PatientServiceTest {
 
     @Test
     void findPatient_Success() {
-        // Arrange
         when(userRepository.findByUsername("patientUser")).thenReturn(Optional.of(user));
         when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(patient));
 
-        // Act
         ResponseEntity<PatientResponseDto> result = patientService.findPatient("patientUser");
 
-        // Assert
         assertNotNull(result);
         assertEquals(200, result.getStatusCodeValue());
         assertNotNull(result.getBody());
@@ -205,10 +187,7 @@ class PatientServiceTest {
 
     @Test
     void findPatient_UserNotFound_ThrowsException() {
-        // Arrange
         when(userRepository.findByUsername("unknownUser")).thenReturn(Optional.empty());
-
-        // Act & Assert
         assertThrows(RuntimeException.class, () -> patientService.findPatient("unknownUser"));
     }
 }

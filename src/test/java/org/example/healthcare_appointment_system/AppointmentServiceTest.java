@@ -16,9 +16,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Optional;
 
@@ -84,7 +81,6 @@ class AppointmentServiceTest {
     @Test
     void bookAppointment_Success() {
         try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
-            // Arrange
             securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
 
             BookAppointmentDto dto = new BookAppointmentDto(1L, 1L);
@@ -101,10 +97,8 @@ class AppointmentServiceTest {
             });
             when(slotRepository.save(any(AvailabilitySlot.class))).thenReturn(testSlot);
 
-            // Act
             var result = appointmentService.bookAppointment(dto);
 
-            // Assert
             assertNotNull(result);
             assertEquals(1L, result.id());
             assertEquals("doctor1", result.doctorName());
@@ -112,23 +106,21 @@ class AppointmentServiceTest {
             assertEquals("BOOKED", result.status());
 
             verify(slotRepository).save(testSlot);
-            assertTrue(testSlot.isReserved()); // Slot should be marked as reserved
+            assertTrue(testSlot.isReserved());
         }
     }
 
     @Test
     void bookAppointment_SlotAlreadyBooked_ThrowsException() {
         try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
-            // Arrange
             securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
 
             BookAppointmentDto dto = new BookAppointmentDto(1L, 1L);
 
             when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(testPatient));
             when(appointmentRepository.existsBySlotIdAndStatus(1L, AppointmentStatus.BOOKED))
-                    .thenReturn(true); // Slot is already booked
+                    .thenReturn(true);
 
-            // Act & Assert
             IllegalStateException exception = assertThrows(IllegalStateException.class,
                     () -> appointmentService.bookAppointment(dto));
 
@@ -142,11 +134,10 @@ class AppointmentServiceTest {
     @Test
     void bookAppointment_SlotAlreadyReserved_ThrowsException() {
         try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
-            // Arrange
             securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
 
             BookAppointmentDto dto = new BookAppointmentDto(1L, 1L);
-            testSlot.setReserved(true); // Slot is already reserved
+            testSlot.setReserved(true);
 
             when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(testPatient));
             when(appointmentRepository.existsBySlotIdAndStatus(1L, AppointmentStatus.BOOKED))
@@ -154,7 +145,6 @@ class AppointmentServiceTest {
             when(doctorRepository.findById(1L)).thenReturn(Optional.of(testDoctor));
             when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
 
-            // Act & Assert
             RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> appointmentService.bookAppointment(dto));
 
@@ -168,7 +158,6 @@ class AppointmentServiceTest {
     @Test
     void markAppointmentCompleted_Success() {
         try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
-            // Arrange
             securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(2L);
 
             Appointment appointment = new Appointment();
@@ -184,13 +173,11 @@ class AppointmentServiceTest {
             when(appointmentRepository.save(any(Appointment.class))).thenReturn(appointment);
             when(slotRepository.save(any(AvailabilitySlot.class))).thenReturn(testSlot);
 
-            // Act
             var result = appointmentService.markAppointmentCompleted(1L);
 
-            // Assert
             assertNotNull(result);
             assertEquals("COMPLETED", result.status());
-            assertFalse(testSlot.isReserved()); // Slot should be freed
+            assertFalse(testSlot.isReserved());
         }
     }
 }
