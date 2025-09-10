@@ -38,7 +38,6 @@ public class PatientService {
         if (userRepository.existsByEmail(dto.email())) {
             throw new RuntimeException("Email already exists");
         }
-
         if (userRepository.existsByPhone(dto.phone())) {
             throw new RuntimeException("Phone already exists");
         }
