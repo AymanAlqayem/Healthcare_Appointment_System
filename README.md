@@ -40,9 +40,22 @@ This system enables hospitals to efficiently manage **patients, doctors, appoint
 - Maven 3.6+
 - Docker & Docker Compose (for containerized setup)
 - Git
+
+
+### Steps
+```bash
 # Clone the repository
 git clone <repository-url>
 cd Healthcare_Appointment_System
+
+# Configure databases (MySQL/Postgres + MongoDB) in
+# src/main/resources/application.properties
+
+# Build the project
+mvn clean install
+
+# Run the application
+mvn spring-boot:run
 
 
 
