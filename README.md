@@ -41,8 +41,10 @@ This system enables hospitals to efficiently manage **patients, doctors, appoint
 - Docker & Docker Compose (for containerized setup)
 - Git
 
-### Option 1: Traditional Setup (Without Docker)
-```bash
+# ===============================
+# OPTION 1: Traditional Setup
+# ===============================
+
 # Clone the repository
 git clone <repository-url>
 cd Healthcare_Appointment_System
@@ -56,7 +58,11 @@ mvn clean install
 # Run the application
 mvn spring-boot:run
 
-### Option 2: Dockerized Setup (Recommended)
+
+# ===============================
+# OPTION 2: Dockerized Setup (Recommended)
+# ===============================
+
 # Clone the repository
 git clone <repository-url>
 cd Healthcare_Appointment_System
@@ -67,7 +73,10 @@ mvn clean package -DskipTests
 # Start all services (Spring Boot, PostgreSQL, MongoDB)
 docker-compose up --build
 
-### Stopping the System
+
+# ===============================
+# STOPPING THE SYSTEM
+# ===============================
 
 # Stop containers (keep database data)
 docker-compose down
@@ -75,7 +84,10 @@ docker-compose down
 # Stop containers and remove database data
 docker-compose down -v
 
-### Useful Docker Commands
+
+# ===============================
+# USEFUL DOCKER COMMANDS
+# ===============================
 
 # List running containers
 docker ps
@@ -88,4 +100,5 @@ docker-compose up --build
 
 # Stop and remove everything including volumes
 docker-compose down -v
+
 
