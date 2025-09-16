@@ -55,3 +55,37 @@ mvn clean install
 
 # Run the application
 mvn spring-boot:run
+
+### Option 2: Dockerized Setup (Recommended)
+# Clone the repository
+git clone <repository-url>
+cd Healthcare_Appointment_System
+
+# Build the Spring Boot JAR
+mvn clean package -DskipTests
+
+# Start all services (Spring Boot, PostgreSQL, MongoDB)
+docker-compose up --build
+
+### Stopping the System
+
+# Stop containers (keep database data)
+docker-compose down
+
+# Stop containers and remove database data
+docker-compose down -v
+
+### Useful Docker Commands
+
+# List running containers
+docker ps
+
+# View logs for Spring Boot container
+docker logs -f healthcare_app
+
+# Rebuild containers after code changes
+docker-compose up --build
+
+# Stop and remove everything including volumes
+docker-compose down -v
+
