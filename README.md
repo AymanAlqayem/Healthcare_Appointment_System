@@ -40,65 +40,35 @@ This system enables hospitals to efficiently manage **patients, doctors, appoint
 - Maven 3.6+
 - Docker & Docker Compose (for containerized setup)
 - Git
-
-# ===============================
-# OPTION 1: Traditional Setup
-# ===============================
-
 # Clone the repository
 git clone <repository-url>
 cd Healthcare_Appointment_System
 
-# Configure databases in application.yml
-# Update PostgreSQL and MongoDB connection strings if needed
-
-# Build the project
+# ------------------------------
+# Option 1: Traditional Setup
+# ------------------------------
 mvn clean install
-
-# Run the application
 mvn spring-boot:run
 
-
-# ===============================
-# OPTION 2: Dockerized Setup (Recommended)
-# ===============================
-
-# Clone the repository
-git clone <repository-url>
-cd Healthcare_Appointment_System
-
-# Build the Spring Boot JAR
+# ------------------------------
+# Option 2: Dockerized Setup
+# ------------------------------
 mvn clean package -DskipTests
-
-# Start all services (Spring Boot, PostgreSQL, MongoDB)
 docker-compose up --build
 
+# ------------------------------
+# Stop the System
+# ------------------------------
+docker-compose down        # stop (keep data)
+docker-compose down -v     # stop & remove data
 
-# ===============================
-# STOPPING THE SYSTEM
-# ===============================
+# ------------------------------
+# Useful Docker Commands
+# ------------------------------
+docker ps                  # list containers
+docker logs -f healthcare_app   # view app logs
+docker-compose up --build       # rebuild & run
+docker-compose down -v          # full cleanup
 
-# Stop containers (keep database data)
-docker-compose down
-
-# Stop containers and remove database data
-docker-compose down -v
-
-
-# ===============================
-# USEFUL DOCKER COMMANDS
-# ===============================
-
-# List running containers
-docker ps
-
-# View logs for Spring Boot container
-docker logs -f healthcare_app
-
-# Rebuild containers after code changes
-docker-compose up --build
-
-# Stop and remove everything including volumes
-docker-compose down -v
 
 
