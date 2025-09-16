@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-  # Defines all the containers you want to run.
   app:
     build: .
     container_name: healthcare_app
