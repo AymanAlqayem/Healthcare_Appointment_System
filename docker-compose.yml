@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  # Defines all the containers you want to run.
+  app:
+    build: .
+    container_name: healthcare_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - mongo
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/clinicdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/clinicdb
+    networks:
+      - healthcare-net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: healthcare_postgres
+    environment:
+      POSTGRES_DB: clinicdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-net
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:6
+    container_name: healthcare_mongo
+    environment:
+      MONGO_INITDB_DATABASE: clinicdb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - healthcare-net
+    restart: unless-stopped
+
+networks:
+  healthcare-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongo_data:
