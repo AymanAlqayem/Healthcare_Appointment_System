@@ -44,31 +44,6 @@ This system enables hospitals to efficiently manage **patients, doctors, appoint
 git clone <repository-url>
 cd Healthcare_Appointment_System
 
-# ------------------------------
-# Option 1: Traditional Setup
-# ------------------------------
-mvn clean install
-mvn spring-boot:run
-
-# ------------------------------
-# Option 2: Dockerized Setup
-# ------------------------------
-mvn clean package -DskipTests
-docker-compose up --build
-
-# ------------------------------
-# Stop the System
-# ------------------------------
-docker-compose down        # stop (keep data)
-docker-compose down -v     # stop & remove data
-
-# ------------------------------
-# Useful Docker Commands
-# ------------------------------
-docker ps                  # list containers
-docker logs -f healthcare_app   # view app logs
-docker-compose up --build       # rebuild & run
-docker-compose down -v          # full cleanup
 
 
 
